@@ -476,7 +476,7 @@
         </div>
         <div id="earn-section">
           <button class="btn btn-primary" id="watch-ad-btn">
-            <span>👁️</span> Watch Ad & Earn ৳<span id="per-ad-amount">0.01</span>
+            <span>👁️</span> Watch Ad & Earn ৳<span id="per-ad-amount">0.06</span>
           </button>
         </div>
       </div>
@@ -567,7 +567,7 @@
             
             <div class="input-group">
               <div class="input-label">Per Ad Rate (৳)</div>
-              <input type="number" id="per-ad-rate" step="0.01" value="0.01" min="0.01" placeholder="Enter amount per ad">
+              <input type="number" id="per-ad-rate" step="0.06" value="0.06" min="0.01" placeholder="Enter amount per ad">
             </div>
             
             <button class="btn btn-primary" id="save-settings">
@@ -880,7 +880,7 @@
       };
       
       saveSettingsBtn.onclick = ()=>{
-        perAdRate = parseFloat(perAdRateInput.value)||0.01;
+        perAdRate = parseFloat(perAdRateInput.value)||0.06;
         saveData(); updateUI();
         showNotification("✅ Settings saved");
       };
