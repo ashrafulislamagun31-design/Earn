@@ -774,7 +774,7 @@
         if(typeof window.showAdexora === "function"){
           window.showAdexora()
             .then(()=>{
-              let timeLeft = 5;
+              let timeLeft = 0;
               adTimer.textContent = "Watch time: " + timeLeft + "s";
               let interval = setInterval(()=>{
                 timeLeft--;
