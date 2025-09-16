@@ -575,14 +575,16 @@
             </button>
             
             <h3 style="margin-top: 20px;">Withdrawal Requests</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>User</th><th>Method</th><th>Number</th><th>Amount</th><th>Date</th><th>Status</th><th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="withdraw-requests"></tbody>
-            </table>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>User</th><th>Method</th><th>Number</th><th>Amount</th><th>Date</th><th>Status</th><th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="withdraw-requests"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -648,6 +650,7 @@
       let userData = { balance: 0, userId: userId };
       let allRequests = JSON.parse(localStorage.getItem("allRequests")||"[]");
       let perAdRate = parseFloat(localStorage.getItem("perAdRate")||"0.01");
+      let isAdminLoggedIn = false;
 
       function loadData() {
         const d = localStorage.getItem(userId+"_data");
@@ -723,17 +726,44 @@
             <td>${r.date}</td>
             <td><span class="status-badge status-${r.status}">${r.status}</span></td>
             <td>
-              <button class="action-btn approve" onclick="approveReq(${i})">✔</button>
-              <button class="action-btn reject" onclick="rejectReq(${i})">✖</button>
-              <button class="action-btn delete" onclick="deleteReq(${i})">❌</button>
+              <button class="action-btn approve" data-index="${i}">✔</button>
+              <button class="action-btn reject" data-index="${i}">✖</button>
+              <button class="action-btn delete" data-index="${i}">❌</button>
             </td>`;
           withdrawRequestsTable.appendChild(row);
         });
+        
+        // Add event listeners to action buttons
+        document.querySelectorAll('.approve').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const index = btn.getAttribute('data-index');
+            allRequests[index].status = "paid";
+            saveData();
+            updateUI();
+            showNotification("Request approved");
+          });
+        });
+        
+        document.querySelectorAll('.reject').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const index = btn.getAttribute('data-index');
+            allRequests[index].status = "rejected";
+            saveData();
+            updateUI();
+            showNotification("Request rejected");
+          });
+        });
+        
+        document.querySelectorAll('.delete').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const index = btn.getAttribute('data-index');
+            allRequests.splice(index, 1);
+            saveData();
+            updateUI();
+            showNotification("Request deleted");
+          });
+        });
       }
-
-      window.approveReq = (i)=>{ allRequests[i].status="paid"; saveData(); updateUI(); }
-      window.rejectReq = (i)=>{ allRequests[i].status="rejected"; saveData(); updateUI(); }
-      window.deleteReq = (i)=>{ allRequests.splice(i,1); saveData(); updateUI(); }
 
       // === Ad Watch ===
       watchAdBtn.onclick = ()=>{
@@ -765,8 +795,21 @@
               console.error("Adexora error:", e);
             });
         } else {
-          adModal.style.display="none";
-          showNotification("❌ Ad service not available",false);
+          // Fallback for testing without ad library
+          let timeLeft = 5;
+          adTimer.textContent = "Watch time: " + timeLeft + "s";
+          let interval = setInterval(()=>{
+            timeLeft--;
+            adTimer.textContent = "Watch time: " + timeLeft + "s";
+            if(timeLeft<=0){
+              clearInterval(interval);
+              closeAdBtn.style.display="block";
+              adTimer.textContent = "✅ Ad finished!";
+              userData.balance += perAdRate;
+              saveData(); updateUI();
+              showNotification("You earned ৳"+perAdRate.toFixed(2));
+            }
+          },1000);
         }
       };
       
@@ -828,6 +871,7 @@
       adminLoginBtn.onclick = ()=>{
         const pass=document.getElementById("admin-password").value;
         if(pass==="eatt7242888"){
+          isAdminLoggedIn = true;
           adminControls.classList.remove("hidden-section");
           showNotification("✅ Admin logged in");
         } else {
@@ -855,6 +899,11 @@
       adminSectionToggle.addEventListener("click", () => {
         adminSection.classList.toggle("hidden-section");
         adminSectionToggle.classList.toggle("collapsed");
+        
+        // If admin is logged in, show controls
+        if (isAdminLoggedIn) {
+          adminControls.classList.remove("hidden-section");
+        }
       });
 
       // Init
@@ -863,4 +912,4 @@
     });
   </script>
 </body>
-              </html>
+                                              </html>
