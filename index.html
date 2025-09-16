@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Earn Now - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://adexora.com/cdn/ads.js?id=141"></script>
     <style>
         * {
             margin: 0;
@@ -182,6 +183,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            font-size: 14px;
         }
         
         .admin-table th, .admin-table td {
@@ -233,6 +235,93 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             display: none;
             z-index: 1000;
+        }
+        
+        .ad-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+            z-index: 1001;
+            text-align: center;
+            width: 320px;
+        }
+        
+        .ad-content {
+            margin: 15px 0;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+        
+        .ad-timer {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #6a11cb;
+            font-weight: bold;
+        }
+        
+        .btn-action {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+            font-size: 12px;
+        }
+        
+        .btn-approve {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-reject {
+            background: #f44336;
+            color: white;
+        }
+        
+        .withdraw-history {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3498db;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -295,6 +384,13 @@
                     
                     <button class="btn btn-primary" id="submit-withdraw">Submit Request</button>
                 </div>
+                
+                <div class="withdraw-history" id="withdraw-history">
+                    <h3>Withdrawal History</h3>
+                    <div id="history-items">
+                        <!-- History items will be added here -->
+                    </div>
+                </div>
             </div>
             
             <button class="btn btn-secondary" id="admin-btn">Admin Panel</button>
@@ -322,31 +418,14 @@
                             <tr>
                                 <th>User</th>
                                 <th>Method</th>
+                                <th>Account Number</th>
                                 <th>Amount</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="withdraw-requests">
-                            <tr>
-                                <td>User1234</td>
-                                <td>bKash</td>
-                                <td>৳50</td>
-                                <td><span class="status-badge status-pending">Pending</span></td>
-                                <td>
-                                    <button class="btn-action approve">Approve</button>
-                                    <button class="btn-action reject">Reject</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>User5678</td>
-                                <td>Nagad</td>
-                                <td>৳100</td>
-                                <td><span class="status-badge status-paid">Paid</span></td>
-                                <td>
-                                    <button class="btn-action" disabled>Completed</button>
-                                </td>
-                            </tr>
+                            <!-- Requests will be added dynamically -->
                         </tbody>
                     </table>
                 </div>
@@ -359,6 +438,16 @@
     </div>
     
     <div class="notification" id="notification"></div>
+    
+    <div class="ad-container" id="ad-container">
+        <h3>Advertisement</h3>
+        <div class="ad-content">
+            <p>Ad is loading...</p>
+            <div class="loading"></div>
+        </div>
+        <div class="ad-timer" id="ad-timer-display">Please wait</div>
+        <button class="btn btn-primary" id="close-ad" style="display: none;">Close Ad</button>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -382,6 +471,10 @@
             const perAdRateInput = document.getElementById('per-ad-rate');
             const saveSettingsBtn = document.getElementById('save-settings');
             const notification = document.getElementById('notification');
+            const adContainer = document.getElementById('ad-container');
+            const adTimerDisplay = document.getElementById('ad-timer-display');
+            const closeAdBtn = document.getElementById('close-ad');
+            const historyItems = document.getElementById('history-items');
             
             // User data (in a real app, this would be stored in a database)
             let userData = {
@@ -389,14 +482,13 @@
                 adsWatchedToday: 0,
                 lastAdDate: null,
                 totalEarnings: 0,
-                perAdRate: 0.01
+                perAdRate: 0.01,
+                userId: 'User' + Math.floor(1000 + Math.random() * 9000)
             };
             
-            // Withdrawal requests (in a real app, this would be stored in a database)
-            let withdrawalRequests = [
-                { id: 1, userId: 'User1234', method: 'bkash', amount: 50, status: 'pending', accountNumber: '01XXXXXXXXX' },
-                { id: 2, userId: 'User5678', method: 'nagad', amount: 100, status: 'paid', accountNumber: '01XXXXXXXXX' }
-            ];
+            // Withdrawal requests and history
+            let withdrawalRequests = [];
+            let withdrawalHistory = [];
             
             // Initialize the app
             function initApp() {
@@ -404,6 +496,19 @@
                 const savedData = localStorage.getItem('earnNowUserData');
                 if (savedData) {
                     userData = JSON.parse(savedData);
+                }
+                
+                // Load withdrawal requests
+                const savedRequests = localStorage.getItem('earnNowWithdrawalRequests');
+                if (savedRequests) {
+                    withdrawalRequests = JSON.parse(savedRequests);
+                }
+                
+                // Load withdrawal history
+                const savedHistory = localStorage.getItem('earnNowWithdrawalHistory');
+                if (savedHistory) {
+                    withdrawalHistory = JSON.parse(savedHistory);
+                    updateWithdrawalHistory();
                 }
                 
                 // Check if it's a new day to reset ad count
@@ -443,6 +548,45 @@
                 localStorage.setItem('earnNowUserData', JSON.stringify(userData));
             }
             
+            // Save withdrawal requests to localStorage
+            function saveWithdrawalRequests() {
+                localStorage.setItem('earnNowWithdrawalRequests', JSON.stringify(withdrawalRequests));
+            }
+            
+            // Save withdrawal history to localStorage
+            function saveWithdrawalHistory() {
+                localStorage.setItem('earnNowWithdrawalHistory', JSON.stringify(withdrawalHistory));
+            }
+            
+            // Update withdrawal history display
+            function updateWithdrawalHistory() {
+                historyItems.innerHTML = '';
+                
+                if (withdrawalHistory.length === 0) {
+                    historyItems.innerHTML = '<p>No withdrawal history</p>';
+                    return;
+                }
+                
+                // Show only last 5 history items
+                const recentHistory = withdrawalHistory.slice(-5);
+                
+                recentHistory.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    
+                    let statusClass = 'status-pending';
+                    if (item.status === 'paid') statusClass = 'status-paid';
+                    if (item.status === 'rejected') statusClass = 'status-rejected';
+                    
+                    historyItem.innerHTML = `
+                        <div>${item.method} - ৳${item.amount}</div>
+                        <span class="status-badge ${statusClass}">${item.status}</span>
+                    `;
+                    
+                    historyItems.appendChild(historyItem);
+                });
+            }
+            
             // Show notification
             function showNotification(message, isSuccess = true) {
                 notification.textContent = message;
@@ -456,24 +600,67 @@
             
             // Watch ad button click
             watchAdBtn.addEventListener('click', function() {
-                // Simulate ad loading
-                watchAdBtn.textContent = 'Loading ad...';
+                // Show ad container
+                adContainer.style.display = 'block';
+                closeAdBtn.style.display = 'none';
+                adTimerDisplay.textContent = 'Loading ad...';
+                
+                // Show loading state
+                watchAdBtn.innerHTML = 'Loading... <span class="loading"></span>';
                 watchAdBtn.disabled = true;
                 
-                setTimeout(() => {
-                    // Simulate ad view completion
-                    userData.balance += userData.perAdRate;
-                    userData.adsWatchedToday++;
-                    userData.totalEarnings += userData.perAdRate;
-                    
-                    saveUserData();
-                    updateUI();
-                    
-                    watchAdBtn.textContent = `Watch Ad & Earn ৳${userData.perAdRate.toFixed(2)}`;
-                    watchAdBtn.disabled = false;
-                    
-                    showNotification(`You earned ৳${userData.perAdRate.toFixed(2)} from watching an ad!`);
-                }, 2000);
+                // Use AdXora ad service
+                if (typeof window.showAdexora === 'function') {
+                    window.showAdexora()
+                        .then(() => {
+                            // Ad was shown successfully
+                            closeAdBtn.style.display = 'block';
+                            adTimerDisplay.textContent = 'Ad completed!';
+                            
+                            // Add money to user's account
+                            userData.balance += userData.perAdRate;
+                            userData.adsWatchedToday++;
+                            userData.totalEarnings += userData.perAdRate;
+                            
+                            saveUserData();
+                            updateUI();
+                            
+                            watchAdBtn.innerHTML = `Watch Ad & Earn ৳${userData.perAdRate.toFixed(2)}`;
+                            watchAdBtn.disabled = false;
+                            
+                            showNotification(`You earned ৳${userData.perAdRate.toFixed(2)} from watching an ad!`);
+                        })
+                        .catch(e => {
+                            // Ad failed to load or was closed
+                            adContainer.style.display = 'none';
+                            watchAdBtn.innerHTML = `Watch Ad & Earn ৳${userData.perAdRate.toFixed(2)}`;
+                            watchAdBtn.disabled = false;
+                            
+                            showNotification('Ad not available. Please try again later.', false);
+                            console.error('Ad error:', e);
+                        });
+                } else {
+                    // Fallback if AdXora is not available
+                    setTimeout(() => {
+                        closeAdBtn.style.display = 'block';
+                        adTimerDisplay.textContent = 'Ad completed!';
+                        
+                        // Simulate ad completion
+                        userData.balance += userData.perAdRate;
+                        userData.adsWatchedToday++;
+                        userData.totalEarnings += userData.perAdRate;
+                        
+                        saveUserData();
+                        updateUI();
+                        
+                        showNotification(`You earned ৳${userData.perAdRate.toFixed(2)} from watching an ad!`);
+                    }, 2000);
+                }
+            });
+            
+            // Close ad button
+            closeAdBtn.addEventListener('click', function() {
+                adContainer.style.display = 'none';
             });
             
             // Withdraw button click
@@ -514,19 +701,25 @@
                 
                 // Create withdrawal request
                 const requestId = Date.now();
-                withdrawalRequests.push({
+                const request = {
                     id: requestId,
-                    userId: `User${Math.floor(1000 + Math.random() * 9000)}`,
+                    userId: userData.userId,
                     method: method,
                     amount: amount,
                     status: 'pending',
-                    accountNumber: accountNumber
-                });
+                    accountNumber: accountNumber,
+                    date: new Date().toLocaleString()
+                };
                 
-                // Deduct amount from balance
-                userData.balance -= amount;
-                saveUserData();
-                updateUI();
+                withdrawalRequests.push(request);
+                
+                // Add to history
+                withdrawalHistory.push(request);
+                saveWithdrawalHistory();
+                updateWithdrawalHistory();
+                
+                // Save withdrawal requests
+                saveWithdrawalRequests();
                 
                 // Reset form
                 document.getElementById('withdraw-method').value = '';
@@ -576,6 +769,13 @@
                 const tableBody = document.getElementById('withdraw-requests');
                 tableBody.innerHTML = '';
                 
+                if (withdrawalRequests.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="6" style="text-align: center;">No withdrawal requests</td>`;
+                    tableBody.appendChild(row);
+                    return;
+                }
+                
                 withdrawalRequests.forEach(request => {
                     const row = document.createElement('tr');
                     
@@ -593,12 +793,13 @@
                     row.innerHTML = `
                         <td>${request.userId}</td>
                         <td>${request.method}</td>
+                        <td>${request.accountNumber}</td>
                         <td>৳${request.amount}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td>
                             ${request.status === 'pending' ? 
-                                `<button class="btn-action approve" data-id="${request.id}">Approve</button>
-                                 <button class="btn-action reject" data-id="${request.id}">Reject</button>` :
+                                `<button class="btn-action btn-approve" data-id="${request.id}">Approve</button>
+                                 <button class="btn-action btn-reject" data-id="${request.id}">Reject</button>` :
                                 `<button class="btn-action" disabled>Completed</button>`
                             }
                         </td>
@@ -608,34 +809,53 @@
                 });
                 
                 // Add event listeners to action buttons
-                document.querySelectorAll('.approve').forEach(btn => {
+                document.querySelectorAll('.btn-approve').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const requestId = parseInt(this.getAttribute('data-id'));
-                        const request = withdrawalRequests.find(r => r.id === requestId);
+                        const requestIndex = withdrawalRequests.findIndex(r => r.id === requestId);
                         
-                        if (request) {
-                            request.status = 'paid';
+                        if (requestIndex !== -1) {
+                            withdrawalRequests[requestIndex].status = 'paid';
+                            
+                            // Update history
+                            const historyIndex = withdrawalHistory.findIndex(h => h.id === requestId);
+                            if (historyIndex !== -1) {
+                                withdrawalHistory[historyIndex].status = 'paid';
+                                saveWithdrawalHistory();
+                                updateWithdrawalHistory();
+                            }
+                            
+                            saveWithdrawalRequests();
                             updateWithdrawalTable();
                             showNotification('Payment approved');
                         }
                     });
                 });
                 
-                document.querySelectorAll('.reject').forEach(btn => {
+                document.querySelectorAll('.btn-reject').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const requestId = parseInt(this.getAttribute('data-id'));
-                        const request = withdrawalRequests.find(r => r.id === requestId);
+                        const requestIndex = withdrawalRequests.findIndex(r => r.id === requestId);
                         
-                        if (request) {
-                            request.status = 'rejected';
-                            
+                        if (requestIndex !== -1) {
                             // Return funds to user
-                            userData.balance += request.amount;
+                            userData.balance += withdrawalRequests[requestIndex].amount;
                             saveUserData();
                             updateUI();
                             
+                            withdrawalRequests[requestIndex].status = 'rejected';
+                            
+                            // Update history
+                            const historyIndex = withdrawalHistory.findIndex(h => h.id === requestId);
+                            if (historyIndex !== -1) {
+                                withdrawalHistory[historyIndex].status = 'rejected';
+                                saveWithdrawalHistory();
+                                updateWithdrawalHistory();
+                            }
+                            
+                            saveWithdrawalRequests();
                             updateWithdrawalTable();
-                            showNotification('Payment rejected');
+                            showNotification('Payment rejected and funds returned');
                         }
                     });
                 });
@@ -646,4 +866,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
