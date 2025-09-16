@@ -1,869 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earn Now - Telegram Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://adexora.com/cdn/ads.js?id=141"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: #333;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        header {
-            background: linear-gradient(to right, #6a11cb, #2575fc);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-        }
-        
-        .balance-container {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            padding: 15px;
-            margin-top: 15px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .balance-label {
-            font-size: 16px;
-            margin-bottom: 5px;
-        }
-        
-        .balance-amount {
-            font-size: 32px;
-            font-weight: bold;
-        }
-        
-        .date-display {
-            margin-top: 10px;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .main-content {
-            padding: 20px;
-        }
-        
-        .card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        h2 {
-            color: #6a11cb;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(to right, #6a11cb, #2575fc);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-        
-        .btn-secondary {
-            background: #e9ecef;
-            color: #495057;
-            margin-top: 10px;
-        }
-        
-        .btn-secondary:hover {
-            background: #dee2e6;
-        }
-        
-        .counter {
-            display: flex;
-            justify-content: space-between;
-            margin: 20px 0;
-        }
-        
-        .counter-item {
-            text-align: center;
-            flex: 1;
-            padding: 10px;
-        }
-        
-        .counter-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #6a11cb;
-            background: #f0f0f0;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 10px;
-        }
-        
-        .counter-label {
-            font-size: 14px;
-            color: #6c757d;
-        }
-        
-        .withdraw-form {
-            display: none;
-            margin-top: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        select, input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 10px;
-            font-size: 16px;
-        }
-        
-        .admin-panel {
-            display: none;
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 15px;
-        }
-        
-        .admin-form {
-            margin-top: 15px;
-        }
-        
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-        
-        .admin-table th, .admin-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .admin-table th {
-            background-color: #e9ecef;
-        }
-        
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-        
-        .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-paid {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .status-rejected {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: #6c757d;
-            font-size: 14px;
-        }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background: #4CAF50;
-            color: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            display: none;
-            z-index: 1000;
-        }
-        
-        .ad-container {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-            z-index: 1001;
-            text-align: center;
-            width: 320px;
-        }
-        
-        .ad-content {
-            margin: 15px 0;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: #f0f0f0;
-            border-radius: 10px;
-        }
-        
-        .ad-timer {
-            font-size: 18px;
-            margin: 10px 0;
-            color: #6a11cb;
-            font-weight: bold;
-        }
-        
-        .btn-action {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 0 5px;
-            font-size: 12px;
-        }
-        
-        .btn-approve {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .btn-reject {
-            background: #f44336;
-            color: white;
-        }
-        
-        .withdraw-history {
-            margin-top: 20px;
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 10px;
-        }
-        
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 3px solid #3498db;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Earn Now - Telegram Mini App</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://adexora.com/cdn/ads.js?id=141"></script>
+<style>
+/* ================== CSS ================== */
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { background: linear-gradient(135deg,#6a11cb 0%,#2575fc 100%); color:#333; min-height:100vh; padding:20px; }
+.container { max-width:500px; margin:0 auto; background:white; border-radius:20px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
+header { background: linear-gradient(to right,#6a11cb,#2575fc); color:white; padding:20px; text-align:center; position:relative; }
+.balance-container { background:rgba(255,255,255,0.2); border-radius:15px; padding:15px; margin-top:15px; backdrop-filter: blur(10px); }
+.balance-label { font-size:16px; margin-bottom:5px; }
+.balance-amount { font-size:32px; font-weight:bold; }
+.date-display { margin-top:10px; font-size:14px; opacity:0.9; }
+.main-content { padding:20px; }
+.card { background:#f8f9fa; border-radius:15px; padding:20px; margin-bottom:20px; box-shadow:0 5px 15px rgba(0,0,0,0.05); }
+h2 { color:#6a11cb; margin-bottom:15px; text-align:center; }
+.btn { display:block; width:100%; padding:15px; border:none; border-radius:10px; font-size:18px; font-weight:bold; cursor:pointer; transition: all 0.3s ease; text-align:center; }
+.btn-primary { background: linear-gradient(to right,#6a11cb,#2575fc); color:white; }
+.btn-primary:hover { opacity:0.9; transform:translateY(-2px); }
+.btn-secondary { background:#e9ecef; color:#495057; margin-top:10px; }
+.btn-secondary:hover { background:#dee2e6; }
+.counter { display:flex; justify-content:space-between; margin:20px 0; }
+.counter-item { text-align:center; flex:1; padding:10px; }
+.counter-value { font-size:24px; font-weight:bold; color:#6a11cb; background:#f0f0f0; border-radius:50%; width:50px; height:50px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; }
+.counter-label { font-size:14px; color:#6c757d; }
+.withdraw-form { display:none; margin-top:20px; }
+.form-group { margin-bottom:15px; }
+label { display:block; margin-bottom:5px; font-weight:500; }
+select,input { width:100%; padding:12px; border:1px solid #ced4da; border-radius:10px; font-size:16px; }
+.admin-panel { display:none; margin-top:30px; padding:20px; background:#f8f9fa; border-radius:15px; }
+.admin-form { margin-top:15px; }
+.admin-table { width:100%; border-collapse:collapse; margin-top:20px; font-size:14px; }
+.admin-table th,.admin-table td { padding:10px; text-align:left; border-bottom:1px solid #dee2e6; }
+.admin-table th { background-color:#e9ecef; }
+.status-badge { padding:5px 10px; border-radius:10px; font-size:12px; }
+.status-pending { background-color:#fff3cd; color:#856404; }
+.status-paid { background-color:#d4edda; color:#155724; }
+.status-rejected { background-color:#f8d7da; color:#721c24; }
+footer { text-align:center; padding:20px; color:#6c757d; font-size:14px; }
+.notification { position:fixed; top:20px; right:20px; padding:15px 20px; background:#4CAF50; color:white; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.2); display:none; z-index:1000; }
+.loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-radius:50%; border-top:3px solid #3498db; animation:spin 1s linear infinite; }
+@keyframes spin { 0% {transform:rotate(0deg);} 100% {transform:rotate(360deg);} }
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Earn Now</h1>
-            <div class="balance-container">
-                <div class="balance-label">Your Balance</div>
-                <div class="balance-amount">৳ <span id="balance">0.00</span></div>
-                <div class="date-display" id="current-date"></div>
-            </div>
-        </header>
-        
-        <div class="main-content">
-            <div class="card">
-                <h2>Watch Ads & Earn Money</h2>
-                <div class="counter">
-                    <div class="counter-item">
-                        <div class="counter-value" id="ad-count-1">0</div>
-                        <div class="counter-label">Ads Today</div>
-                    </div>
-                    <div class="counter-item">
-                        <div class="counter-value" id="ad-count-2">0</div>
-                        <div class="counter-label">Total Earnings</div>
-                    </div>
-                    <div class="counter-item">
-                        <div class="counter-value" id="ad-count-3">0</div>
-                        <div class="counter-label">This Week</div>
-                    </div>
-                </div>
-                <button class="btn btn-primary" id="watch-ad-btn">Watch Ad & Earn ৳<span id="per-ad-amount">0.01</span></button>
-            </div>
-            
-            <div class="card">
-                <h2>Withdraw Your Earnings</h2>
-                <p style="text-align: center; margin-bottom: 15px;">Minimum withdrawal: ৳20 | Maximum: ৳500</p>
-                <button class="btn btn-secondary" id="withdraw-btn">Withdraw Money</button>
-                
-                <div class="withdraw-form" id="withdraw-form">
-                    <div class="form-group">
-                        <label for="withdraw-method">Select Method</label>
-                        <select id="withdraw-method">
-                            <option value="">Select a method</option>
-                            <option value="bkash">bKash</option>
-                            <option value="nagad">Nagad</option>
-                            <option value="recharge">Mobile Recharge</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="account-number">Account/Mobile Number</label>
-                        <input type="text" id="account-number" placeholder="Enter your number">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="withdraw-amount">Amount (৳)</label>
-                        <input type="number" id="withdraw-amount" placeholder="Enter amount" min="20" max="500">
-                    </div>
-                    
-                    <button class="btn btn-primary" id="submit-withdraw">Submit Request</button>
-                </div>
-                
-                <div class="withdraw-history" id="withdraw-history">
-                    <h3>Withdrawal History</h3>
-                    <div id="history-items">
-                        <!-- History items will be added here -->
-                    </div>
-                </div>
-            </div>
-            
-            <button class="btn btn-secondary" id="admin-btn">Admin Panel</button>
-            
-            <div class="admin-panel" id="admin-panel">
-                <h2>Admin Panel</h2>
-                
-                <div class="form-group">
-                    <label for="admin-password">Admin Password</label>
-                    <input type="password" id="admin-password" placeholder="Enter admin password">
-                </div>
-                
-                <button class="btn btn-primary" id="admin-login">Login</button>
-                
-                <div class="admin-form" id="admin-controls" style="display: none;">
-                    <div class="form-group">
-                        <label for="per-ad-rate">Earnings Per Ad (৳)</label>
-                        <input type="number" id="per-ad-rate" step="0.01" min="0.01" value="0.01">
-                    </div>
-                    <button class="btn btn-primary" id="save-settings">Save Settings</button>
-                    
-                    <h3 style="margin-top: 30px;">Withdrawal Requests</h3>
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Method</th>
-                                <th>Account Number</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="withdraw-requests">
-                            <!-- Requests will be added dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        <footer>
-            <p>© 2023 Earn Now Mini App | Designed for Telegram</p>
-        </footer>
-    </div>
-    
-    <div class="notification" id="notification"></div>
-    
-    <div class="ad-container" id="ad-container">
-        <h3>Advertisement</h3>
-        <div class="ad-content">
-            <p>Ad is loading...</p>
-            <div class="loading"></div>
-        </div>
-        <div class="ad-timer" id="ad-timer-display">Please wait</div>
-        <button class="btn btn-primary" id="close-ad" style="display: none;">Close Ad</button>
-    </div>
+<div class="container">
+<header>
+<h1>Earn Now</h1>
+<div class="balance-container">
+<div class="balance-label">Your Balance</div>
+<div class="balance-amount">৳ <span id="balance">0.00</span></div>
+<div class="date-display" id="current-date"></div>
+</div>
+</header>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Telegram WebApp
-            const tg = window.Telegram.WebApp;
-            tg.expand();
-            tg.enableClosingConfirmation();
-            
-            // DOM Elements
-            const balanceElement = document.getElementById('balance');
-            const currentDateElement = document.getElementById('current-date');
-            const watchAdBtn = document.getElementById('watch-ad-btn');
-            const withdrawBtn = document.getElementById('withdraw-btn');
-            const withdrawForm = document.getElementById('withdraw-form');
-            const submitWithdrawBtn = document.getElementById('submit-withdraw');
-            const adminBtn = document.getElementById('admin-btn');
-            const adminPanel = document.getElementById('admin-panel');
-            const adminLoginBtn = document.getElementById('admin-login');
-            const adminControls = document.getElementById('admin-controls');
-            const perAdAmountElement = document.getElementById('per-ad-amount');
-            const perAdRateInput = document.getElementById('per-ad-rate');
-            const saveSettingsBtn = document.getElementById('save-settings');
-            const notification = document.getElementById('notification');
-            const adContainer = document.getElementById('ad-container');
-            const adTimerDisplay = document.getElementById('ad-timer-display');
-            const closeAdBtn = document.getElementById('close-ad');
-            const historyItems = document.getElementById('history-items');
-            
-            // User data (in a real app, this would be stored in a database)
-            let userData = {
-                balance: 0,
-                adsWatchedToday: 0,
-                lastAdDate: null,
-                totalEarnings: 0,
-                perAdRate: 0.01,
-                userId: 'User' + Math.floor(1000 + Math.random() * 9000)
-            };
-            
-            // Withdrawal requests and history
-            let withdrawalRequests = [];
-            let withdrawalHistory = [];
-            
-            // Initialize the app
-            function initApp() {
-                // Load user data from localStorage (simulating database)
-                const savedData = localStorage.getItem('earnNowUserData');
-                if (savedData) {
-                    userData = JSON.parse(savedData);
-                }
-                
-                // Load withdrawal requests
-                const savedRequests = localStorage.getItem('earnNowWithdrawalRequests');
-                if (savedRequests) {
-                    withdrawalRequests = JSON.parse(savedRequests);
-                }
-                
-                // Load withdrawal history
-                const savedHistory = localStorage.getItem('earnNowWithdrawalHistory');
-                if (savedHistory) {
-                    withdrawalHistory = JSON.parse(savedHistory);
-                    updateWithdrawalHistory();
-                }
-                
-                // Check if it's a new day to reset ad count
-                const today = new Date().toDateString();
-                if (userData.lastAdDate !== today) {
-                    userData.adsWatchedToday = 0;
-                    userData.lastAdDate = today;
-                    saveUserData();
-                }
-                
-                // Update UI with user data
-                updateUI();
-                
-                // Set current date
-                const now = new Date();
-                currentDateElement.textContent = now.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
-            }
-            
-            // Update UI with current data
-            function updateUI() {
-                balanceElement.textContent = userData.balance.toFixed(2);
-                perAdAmountElement.textContent = userData.perAdRate.toFixed(2);
-                document.getElementById('ad-count-1').textContent = userData.adsWatchedToday;
-                document.getElementById('ad-count-2').textContent = userData.totalEarnings.toFixed(2);
-                
-                // Update withdrawal requests table in admin panel
-                updateWithdrawalTable();
-            }
-            
-            // Save user data to localStorage
-            function saveUserData() {
-                localStorage.setItem('earnNowUserData', JSON.stringify(userData));
-            }
-            
-            // Save withdrawal requests to localStorage
-            function saveWithdrawalRequests() {
-                localStorage.setItem('earnNowWithdrawalRequests', JSON.stringify(withdrawalRequests));
-            }
-            
-            // Save withdrawal history to localStorage
-            function saveWithdrawalHistory() {
-                localStorage.setItem('earnNowWithdrawalHistory', JSON.stringify(withdrawalHistory));
-            }
-            
-            // Update withdrawal history display
-            function updateWithdrawalHistory() {
-                historyItems.innerHTML = '';
-                
-                if (withdrawalHistory.length === 0) {
-                    historyItems.innerHTML = '<p>No withdrawal history</p>';
-                    return;
-                }
-                
-                // Show only last 5 history items
-                const recentHistory = withdrawalHistory.slice(-5);
-                
-                recentHistory.forEach(item => {
-                    const historyItem = document.createElement('div');
-                    historyItem.className = 'history-item';
-                    
-                    let statusClass = 'status-pending';
-                    if (item.status === 'paid') statusClass = 'status-paid';
-                    if (item.status === 'rejected') statusClass = 'status-rejected';
-                    
-                    historyItem.innerHTML = `
-                        <div>${item.method} - ৳${item.amount}</div>
-                        <span class="status-badge ${statusClass}">${item.status}</span>
-                    `;
-                    
-                    historyItems.appendChild(historyItem);
-                });
-            }
-            
-            // Show notification
-            function showNotification(message, isSuccess = true) {
-                notification.textContent = message;
-                notification.style.backgroundColor = isSuccess ? '#4CAF50' : '#f44336';
-                notification.style.display = 'block';
-                
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 3000);
-            }
-            
-            // Watch ad button click
-            watchAdBtn.addEventListener('click', function() {
-                // Show ad container
-                adContainer.style.display = 'block';
-                closeAdBtn.style.display = 'none';
-                adTimerDisplay.textContent = 'Loading ad...';
-                
-                // Show loading state
-                watchAdBtn.innerHTML = 'Loading... <span class="loading"></span>';
-                watchAdBtn.disabled = true;
-                
-                // Use AdXora ad service
-                if (typeof window.showAdexora === 'function') {
-                    window.showAdexora()
-                        .then(() => {
-                            // Ad was shown successfully
-                            closeAdBtn.style.display = 'block';
-                            adTimerDisplay.textContent = 'Ad completed!';
-                            
-                            // Add money to user's account
-                            userData.balance += userData.perAdRate;
-                            userData.adsWatchedToday++;
-                            userData.totalEarnings += userData.perAdRate;
-                            
-                            saveUserData();
-                            updateUI();
-                            
-                            watchAdBtn.innerHTML = `Watch Ad & Earn ৳${userData.perAdRate.toFixed(2)}`;
-                            watchAdBtn.disabled = false;
-                            
-                            showNotification(`You earned ৳${userData.perAdRate.toFixed(2)} from watching an ad!`);
-                        })
-                        .catch(e => {
-                            // Ad failed to load or was closed
-                            adContainer.style.display = 'none';
-                            watchAdBtn.innerHTML = `Watch Ad & Earn ৳${userData.perAdRate.toFixed(2)}`;
-                            watchAdBtn.disabled = false;
-                            
-                            showNotification('Ad not available. Please try again later.', false);
-                            console.error('Ad error:', e);
-                        });
-                } else {
-                    // Fallback if AdXora is not available
-                    setTimeout(() => {
-                        closeAdBtn.style.display = 'block';
-                        adTimerDisplay.textContent = 'Ad completed!';
-                        
-                        // Simulate ad completion
-                        userData.balance += userData.perAdRate;
-                        userData.adsWatchedToday++;
-                        userData.totalEarnings += userData.perAdRate;
-                        
-                        saveUserData();
-                        updateUI();
-                        
-                        showNotification(`You earned ৳${userData.perAdRate.toFixed(2)} from watching an ad!`);
-                    }, 2000);
-                }
-            });
-            
-            // Close ad button
-            closeAdBtn.addEventListener('click', function() {
-                adContainer.style.display = 'none';
-            });
-            
-            // Withdraw button click
-            withdrawBtn.addEventListener('click', function() {
-                if (userData.balance < 20) {
-                    showNotification('Minimum withdrawal amount is ৳20', false);
-                    return;
-                }
-                
-                withdrawForm.style.display = withdrawForm.style.display === 'block' ? 'none' : 'block';
-            });
-            
-            // Submit withdrawal request
-            submitWithdrawBtn.addEventListener('click', function() {
-                const method = document.getElementById('withdraw-method').value;
-                const accountNumber = document.getElementById('account-number').value;
-                const amount = parseFloat(document.getElementById('withdraw-amount').value);
-                
-                if (!method) {
-                    showNotification('Please select a withdrawal method', false);
-                    return;
-                }
-                
-                if (!accountNumber || accountNumber.length < 11) {
-                    showNotification('Please enter a valid account/mobile number', false);
-                    return;
-                }
-                
-                if (isNaN(amount) || amount < 20 || amount > 500) {
-                    showNotification('Please enter a valid amount between ৳20 and ৳500', false);
-                    return;
-                }
-                
-                if (amount > userData.balance) {
-                    showNotification('Insufficient balance', false);
-                    return;
-                }
-                
-                // Create withdrawal request
-                const requestId = Date.now();
-                const request = {
-                    id: requestId,
-                    userId: userData.userId,
-                    method: method,
-                    amount: amount,
-                    status: 'pending',
-                    accountNumber: accountNumber,
-                    date: new Date().toLocaleString()
-                };
-                
-                withdrawalRequests.push(request);
-                
-                // Add to history
-                withdrawalHistory.push(request);
-                saveWithdrawalHistory();
-                updateWithdrawalHistory();
-                
-                // Save withdrawal requests
-                saveWithdrawalRequests();
-                
-                // Reset form
-                document.getElementById('withdraw-method').value = '';
-                document.getElementById('account-number').value = '';
-                document.getElementById('withdraw-amount').value = '';
-                withdrawForm.style.display = 'none';
-                
-                showNotification('Withdrawal request submitted successfully!');
-            });
-            
-            // Admin panel button click
-            adminBtn.addEventListener('click', function() {
-                adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
-            });
-            
-            // Admin login
-            adminLoginBtn.addEventListener('click', function() {
-                const password = document.getElementById('admin-password').value;
-                
-                if (password === 'eatt7242888') {
-                    adminControls.style.display = 'block';
-                    perAdRateInput.value = userData.perAdRate;
-                    showNotification('Admin access granted');
-                } else {
-                    showNotification('Invalid admin password', false);
-                }
-            });
-            
-            // Save admin settings
-            saveSettingsBtn.addEventListener('click', function() {
-                const newRate = parseFloat(perAdRateInput.value);
-                
-                if (isNaN(newRate) || newRate < 0.01) {
-                    showNotification('Please enter a valid amount (minimum ৳0.01)', false);
-                    return;
-                }
-                
-                userData.perAdRate = newRate;
-                saveUserData();
-                updateUI();
-                
-                showNotification('Settings saved successfully');
-            });
-            
-            // Update withdrawal requests table
-            function updateWithdrawalTable() {
-                const tableBody = document.getElementById('withdraw-requests');
-                tableBody.innerHTML = '';
-                
-                if (withdrawalRequests.length === 0) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td colspan="6" style="text-align: center;">No withdrawal requests</td>`;
-                    tableBody.appendChild(row);
-                    return;
-                }
-                
-                withdrawalRequests.forEach(request => {
-                    const row = document.createElement('tr');
-                    
-                    let statusClass = 'status-pending';
-                    let statusText = 'Pending';
-                    
-                    if (request.status === 'paid') {
-                        statusClass = 'status-paid';
-                        statusText = 'Paid';
-                    } else if (request.status === 'rejected') {
-                        statusClass = 'status-rejected';
-                        statusText = 'Rejected';
-                    }
-                    
-                    row.innerHTML = `
-                        <td>${request.userId}</td>
-                        <td>${request.method}</td>
-                        <td>${request.accountNumber}</td>
-                        <td>৳${request.amount}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                        <td>
-                            ${request.status === 'pending' ? 
-                                `<button class="btn-action btn-approve" data-id="${request.id}">Approve</button>
-                                 <button class="btn-action btn-reject" data-id="${request.id}">Reject</button>` :
-                                `<button class="btn-action" disabled>Completed</button>`
-                            }
-                        </td>
-                    `;
-                    
-                    tableBody.appendChild(row);
-                });
-                
-                // Add event listeners to action buttons
-                document.querySelectorAll('.btn-approve').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const requestId = parseInt(this.getAttribute('data-id'));
-                        const requestIndex = withdrawalRequests.findIndex(r => r.id === requestId);
-                        
-                        if (requestIndex !== -1) {
-                            withdrawalRequests[requestIndex].status = 'paid';
-                            
-                            // Update history
-                            const historyIndex = withdrawalHistory.findIndex(h => h.id === requestId);
-                            if (historyIndex !== -1) {
-                                withdrawalHistory[historyIndex].status = 'paid';
-                                saveWithdrawalHistory();
-                                updateWithdrawalHistory();
-                            }
-                            
-                            saveWithdrawalRequests();
-                            updateWithdrawalTable();
-                            showNotification('Payment approved');
-                        }
-                    });
-                });
-                
-                document.querySelectorAll('.btn-reject').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const requestId = parseInt(this.getAttribute('data-id'));
-                        const requestIndex = withdrawalRequests.findIndex(r => r.id === requestId);
-                        
-                        if (requestIndex !== -1) {
-                            // Return funds to user
-                            userData.balance += withdrawalRequests[requestIndex].amount;
-                            saveUserData();
-                            updateUI();
-                            
-                            withdrawalRequests[requestIndex].status = 'rejected';
-                            
-                            // Update history
-                            const historyIndex = withdrawalHistory.findIndex(h => h.id === requestId);
-                            if (historyIndex !== -1) {
-                                withdrawalHistory[historyIndex].status = 'rejected';
-                                saveWithdrawalHistory();
-                                updateWithdrawalHistory();
-                            }
-                            
-                            saveWithdrawalRequests();
-                            updateWithdrawalTable();
-                            showNotification('Payment rejected and funds returned');
-                        }
-                    });
-                });
-            }
-            
-            // Initialize the app
-            initApp();
-        });
-    </script>
-</body>
-    </html>
+<div class="main-content">
+<div class="card">
+<h2>Watch Ads & Earn Money</h2>
+<div class="counter">
+<div class="counter-item"><div class="counter-value" id="ad-count-1">0</div><div class="counter-label">Ads Today</div></div>
+<div class="counter-item"><div class="counter-value" id="ad-count-2">0</div><div class="counter-label">Total Earnings</div></div>
+<div class="counter-item"><div class="counter-value" id="ad-count-3">0</div><div class="counter-label">This Week</div></div>
+</div>
+<button class="btn btn-primary" id="watch-ad-btn">Watch Ad & Earn ৳<span id="per-ad-amount">0.01</span></button>
+</div>
+
+<div class="card">
+<h2>Withdraw Your Earnings</h2>
+<p style="text-align:center;margin-bottom:15px;">Minimum withdrawal: ৳20 | Maximum: ৳500</p>
+<button class="btn btn-secondary" id="withdraw-btn">Withdraw Money</button>
+<div class="withdraw-form" id="withdraw-form">
+<div class="form-group">
+<label for="withdraw-method">Select Method</label>
+<select id="withdraw-method">
+<option value="">Select a method</option>
+<option value="bkash">bKash</option>
+<option value="nagad">Nagad</option>
+<option value="recharge">Mobile Recharge</option>
+</select>
+</div>
+<div class="form-group">
+<label for="account-number">Account/Mobile Number</label>
+<input type="text" id="account-number" placeholder="Enter your number">
+</div>
+<div class="form-group">
+<label for="withdraw-amount">Amount (৳)</label>
+<input type="number" id="withdraw-amount" placeholder="Enter amount" min="20" max="500">
+</div>
+<button class="btn btn-primary" id="submit-withdraw">Submit Request</button>
+</div>
+<div class="withdraw-history" id="withdraw-history">
+<h3>Withdrawal History</h3>
+<div id="history-items"></div>
+</div>
+</div>
+
+<button class="btn btn-secondary" id="admin-btn">Admin Panel</button>
+<div class="admin-panel" id="admin-panel">
+<h2>Admin Panel</h2>
+<div class="form-group">
+<label for="admin-password">Admin Password</label>
+<input type="password" id="admin-password" placeholder="Enter admin password">
+</div>
+<button class="btn btn-primary" id="admin-login">Login</button>
+<div class="admin-form" id="admin-controls" style="display:none;">
+<div class="form-group">
+<label for="per-ad-rate">Earnings Per Ad (৳)</label>
+<input type="number" id="per-ad-rate" step="0.01" min="0.01" value="0.01">
+</div>
+<button class="btn btn-primary" id="save-settings">Save Settings</button>
+<h3 style="margin-top:30px;">Withdrawal Requests</h3>
+<table class="admin-table">
+<thead>
+<tr><th>User</th><th>Method</th><th>Account Number</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+</thead>
+<tbody id="withdraw-requests"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<footer>
+<p>© 2023 Earn Now Mini App | Designed for Telegram</p>
+</footer>
+<div class="notification" id="notification"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+const tg = window.Telegram.WebApp; tg.expand(); tg.enableClosingConfirmation();
+const telegramUser = tg.initDataUnsafe.user;
+const telegramUserId = telegramUser ? telegramUser.id.toString() : 'guest_' + Math.floor(Math.random()*1000000);
+
+const balanceElement = document.getElementById('balance');
+const currentDateElement = document.getElementById('current-date');
+const watchAdBtn = document.getElementById('watch-ad-btn');
+const withdrawBtn = document.getElementById('withdraw-btn');
+const withdrawForm = document.getElementById('withdraw-form');
+const submitWithdrawBtn = document.getElementById('submit-withdraw');
+const adminBtn = document.getElementById('admin-btn');
+const adminPanel = document.getElementById('admin-panel');
+const adminLoginBtn = document.getElementById('admin-login');
+const adminControls = document.getElementById('admin-controls');
+const perAdAmountElement = document.getElementById('per-ad-amount');
+const perAdRateInput = document.getElementById('per-ad-rate');
+const saveSettingsBtn = document.getElementById('save-settings');
+const notification = document.getElementById('notification');
+const historyItems = document.getElementById('history-items');
+
+let userData = { balance:0, adsWatchedToday:0, lastAdDate:null, totalEarnings:0, perAdRate:0.01, userId:telegramUserId, username: telegramUser?telegramUser.username:'Guest' };
+let withdrawalRequests = [];
+let withdrawalHistory = [];
+
+function initApp() {
+    const userDataKey = `earnNowUserData_${telegramUserId}`;
+    const savedData = localStorage.getItem(userDataKey);
+    if(savedData) userData = JSON.parse(savedData);
+
+    const savedRequests = localStorage.getItem('earnNowWithdrawalRequests');
+    if(savedRequests) withdrawalRequests = JSON.parse(savedRequests);
+
+    const savedHistory = localStorage.getItem('earnNowWithdrawalHistory');
+    if(savedHistory) { withdrawalHistory = JSON.parse(savedHistory); updateWithdrawalHistory(); }
+
+    const today = new Date().toDateString();
+    if(userData.lastAdDate!==today) { userData.adsWatchedToday=0; userData.lastAdDate=today; saveUserData(); }
+
+    updateUI();
+
+    const now = new Date();
+    currentDateElement.textContent = now.toLocaleDateString('en-US',{ weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+function updateUI() {
+    balanceElement.textContent = userData.balance.toFixed(2);
+    perAdAmountElement.textContent = userData.perAdRate.toFixed(2);
+    document.getElementById('ad-count-1').textContent = userData.adsWatchedToday;
+    document.getElementById('ad-count-2').textContent = userData.totalEarnings.toFixed(2);
+    updateWithdrawalTable();
+}
+
+function saveUserData() { const userDataKey = `earnNowUserData_${telegramUserId}`; localStorage.setItem(userDataKey,JSON.stringify(userData)); }
+function saveWithdrawalRequests() { localStorage.setItem('earnNowWithdrawalRequests',JSON.stringify(withdrawalRequests)); }
+function saveWithdrawalHistory() { localStorage.setItem('earnNowWithdrawalHistory',JSON.stringify(withdrawalHistory)); }
+
+function updateWithdrawalHistory() {
+    historyItems.innerHTML='';
+    const userHistory = withdrawalHistory.filter(item=>item.userId===telegramUserId);
+    if(userHistory.length===0){ historyItems.innerHTML='<p>No withdrawal history</p>'; return; }
+    const recentHistory = userHistory.slice(-5);
+    recentHistory.forEach(item=>{
+        const historyItem = document.createElement('div'); historyItem.className='history-item';
+        let statusClass='status-pending'; if(item.status==='paid') statusClass='status-paid'; else if(item.status==='rejected') statusClass='status-rejected';
+        historyItem.innerHTML=`<div>${item.method} - ৳${item.amount}</div><span class="status-badge ${statusClass}">${item.status}</span>`;
+        historyItems.appendChild(historyItem);
+    });
+}
+
+function showNotification(message,isSuccess=true){ notification.textContent=message; notification.style.backgroundColor=isSuccess?'#4CAF50':'#f44336'; notification.style.display='block'; setTimeout(()=>{ notification.style.display='none'; },3000); }
+
+// ================== Adexora Integration ==================
+watchAdBtn.addEventListener('click',function(){
+    watchAdBtn.innerHTML='Loading... <span class="loading"></span>';
+    watchAdBtn.disabled=true;
+
+    window.showAdexora()
+    .then(()=>{
+        // Ad completed → add reward
+        userData.balance+=userData.perAdRate;
+        userData.adsWatchedToday++;
+        userData.totalEarnings+=userData.perAdRate;
+        saveUserData();
+        updateUI();
+        showNotification(`You earned ৳${userData.perAdRate.toFixed(2)} from watching an ad!`);
+    })
+    .catch(e=>{
+        // Ad skipped / error → no reward
+        showNotification('Ad not completed. No reward given.',false);
+        console.error('Ad error:',e);
+    })
+    .finally(()=>{
+        watchAdBtn.innerHTML=`Watch Ad & Earn ৳${userData.perAdRate.toFixed(2)}`;
+        watchAdBtn.disabled=false;
+    });
+});
+
+// ================== Withdraw ==================
+withdrawBtn.addEventListener('click',function(){
+    if(userData.balance<20){ showNotification('Minimum withdrawal amount is ৳20',false); return; }
+    withdrawForm.style.display = withdrawForm.style.display==='block'?'none':'block';
+});
+
+submitWithdrawBtn.addEventListener('click',function(){
+    const method=document.getElementById('withdraw-method').value;
+    const accountNumber=document.getElementById('account-number').value;
+    const amount=parseFloat(document.getElementById('withdraw-amount').value);
+    if(!method){ showNotification('Please select a withdrawal method',false); return; }
+    if(!accountNumber || accountNumber.length<11){ showNotification('Please enter a valid account/mobile number',false); return; }
+    if(isNaN(amount) || amount<20 || amount>500){ showNotification('Please enter a valid amount between ৳20 and ৳500',false); return; }
+    if(amount>userData.balance){ showNotification('Insufficient balance',false); return; }
+
+    const requestId=Date.now();
+    const request={ id:requestId, userId:telegramUserId, username:userData.username, method, amount, status:'pending', accountNumber, date:new Date().toLocaleString() };
+    withdrawalRequests.push(request);
+    withdrawalHistory.push(request);
+    saveWithdrawalHistory();
+    updateWithdrawalHistory();
+    userData.balance-=amount;
+    saveUserData();
+    updateUI();
+    saveWithdrawalRequests();
+
+    document.getElementById('withdraw-method').value='';
+    document.getElementById('account-number').value='';
+    document.getElementById('withdraw-amount').value='';
+    withdrawForm.style.display='none';
+    showNotification('Withdrawal request submitted successfully!');
+});
+
+// ================== Admin ==================
+adminBtn.addEventListener('click',()=>{ adminPanel.style.display=adminPanel.style.display==='block'?'none':'block'; });
+adminLoginBtn.addEventListener('click',()=>{
+    const password=document.getElementById('admin-password').value;
+    if(password==='eatt7242888'){ adminControls.style.display='block'; perAdRateInput.value=userData.perAdRate; showNotification('Admin access granted'); }
+    else{ showNotification('Invalid admin password',false); }
+});
+
+saveSettingsBtn.addEventListener('click',()=>{
+    const newRate=parseFloat(perAdRateInput.value);
+    if(isNaN(newRate)||newRate<0.01){ showNotification('Please enter a valid amount (minimum ৳0.01)',false); return; }
+    userData.perAdRate=newRate; saveUserData(); updateUI(); showNotification('Settings saved successfully');
+});
+
+// ================== Withdrawal Table ==================
+function updateWithdrawalTable(){
+    const tableBody=document.getElementById('withdraw-requests'); tableBody.innerHTML='';
+    if(withdrawalRequests.length===0){ tableBody.innerHTML='<tr><td colspan="6" style="text-align:center;">No withdrawal requests</td></tr>'; return; }
+    withdrawalRequests.forEach(request=>{
+        const row=document.createElement('tr');
+        let statusClass='status-pending'; let statusText='Pending';
+        if(request.status==='paid'){ statusClass='status-paid'; statusText='Paid'; }
+        else if(request.status==='rejected'){ statusClass='status-rejected'; statusText='Rejected'; }
+        row.innerHTML=`
+        <td>${request.username||request.userId}</td>
+        <td>${request.method}</td>
+        <td>${request.accountNumber}</td>
+        <td>৳${request.amount}</td>
+        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+        <td>${request.status==='pending'?`<button class="btn-action btn-approve" data-id="${request.id}">Approve</button><button class="btn-action btn-reject" data-id="${request.id}">Reject</button>`:`<button class="btn-action" disabled>Completed</button>`}</td>`;
+        tableBody.appendChild(row);
+    });
+
+    document.querySelectorAll('.btn-approve').forEach(btn=>{
+        btn.addEventListener('click',function(){
+            const requestId=parseInt(this.getAttribute('data-id'));
+            const requestIndex=withdrawalRequests.findIndex(r=>r.id===requestId);
+            if(requestIndex!==-1){
+                withdrawalRequests[requestIndex].status='paid';
+                const historyIndex=withdrawalHistory.findIndex(h=>h.id===requestId);
+                if
