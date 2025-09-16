@@ -103,13 +103,11 @@
       const tg = window.Telegram.WebApp;
       tg.expand();
 
-      // === User ID তৈরি ===
       let userId = "guest_" + Math.floor(Math.random()*99999);
       if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
         userId = "user_" + tg.initDataUnsafe.user.id;
       }
 
-      // Elements
       const balanceEl = document.getElementById("balance");
       const perAdAmountEl = document.getElementById("per-ad-amount");
       const watchAdBtn = document.getElementById("watch-ad-btn");
@@ -130,12 +128,10 @@
       const adTimer = document.getElementById("adTimer");
       const closeAdBtn = document.getElementById("closeAd");
 
-      // === Global Data ===
       let userData = { balance: 0, userId: userId };
       let allRequests = JSON.parse(localStorage.getItem("allRequests")||"[]");
       let perAdRate = parseFloat(localStorage.getItem("perAdRate")||"0.01");
 
-      // === Storage ===
       function loadData() {
         const d = localStorage.getItem(userId+"_data");
         if (d) userData = JSON.parse(d);
@@ -191,7 +187,6 @@
         });
       }
 
-      // Global Admin Actions
       window.approveReq = (i)=>{ allRequests[i].status="paid"; saveData(); updateUI(); }
       window.rejectReq = (i)=>{ allRequests[i].status="rejected"; saveData(); updateUI(); }
       window.deleteReq = (i)=>{ allRequests.splice(i,1); saveData(); updateUI(); }
@@ -202,27 +197,33 @@
         adTimer.textContent = "Loading ad...";
         closeAdBtn.style.display="none";
 
-        window.showAdexora()
-          .then(()=>{
-            let timeLeft = 10;
-            adTimer.textContent = "Watch time: " + timeLeft + "s";
-            let interval = setInterval(()=>{
-              timeLeft--;
+        if(typeof window.showAdexora === "function"){
+          window.showAdexora()
+            .then(()=>{
+              let timeLeft = 10;
               adTimer.textContent = "Watch time: " + timeLeft + "s";
-              if(timeLeft<=0){
-                clearInterval(interval);
-                closeAdBtn.style.display="block";
-                adTimer.textContent = "✅ Ad finished!";
-                userData.balance += perAdRate;
-                saveData(); updateUI();
-                showNotification("You earned ৳"+perAdRate.toFixed(2));
-              }
-            },1000);
-          })
-          .catch(e=>{
-            adModal.style.display="none";
-            showNotification("❌ Failed to load ad",false);
-          });
+              let interval = setInterval(()=>{
+                timeLeft--;
+                adTimer.textContent = "Watch time: " + timeLeft + "s";
+                if(timeLeft<=0){
+                  clearInterval(interval);
+                  closeAdBtn.style.display="block";
+                  adTimer.textContent = "✅ Ad finished!";
+                  userData.balance += perAdRate;
+                  saveData(); updateUI();
+                  showNotification("You earned ৳"+perAdRate.toFixed(2));
+                }
+              },1000);
+            })
+            .catch(e=>{
+              adModal.style.display="none";
+              showNotification("❌ Failed to load ad",false);
+              console.error("Adexora error:", e);
+            });
+        } else {
+          adModal.style.display="none";
+          showNotification("❌ Ad service not available",false);
+        }
       };
       closeAdBtn.onclick = ()=> adModal.style.display="none";
 
