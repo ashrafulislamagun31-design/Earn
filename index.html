@@ -7,67 +7,595 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://adexora.com/cdn/ads.js?id=141"></script>
   <style>
-    /* ==== CSS SAME AS YOUR VERSION (shortened here for clarity) ==== */
-    body{background:linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);font-family:sans-serif;padding:20px;}
-    .container{max-width:500px;margin:auto;background:white;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.2);overflow:hidden}
-    header{background:linear-gradient(to right,#6a11cb,#2575fc);color:white;padding:20px;text-align:center}
-    .balance-amount{font-size:32px;font-weight:bold}
-    .btn{width:100%;padding:12px;margin-top:10px;border-radius:10px;font-size:16px;cursor:pointer}
-    .btn-primary{background:linear-gradient(to right,#6a11cb,#2575fc);color:white}
-    .btn-secondary{background:#e9ecef}
-    .notification{position:fixed;top:20px;right:20px;padding:10px 15px;background:#4caf50;color:#fff;border-radius:8px;display:none}
-    .status-badge{padding:3px 8px;border-radius:5px;font-size:12px}
-    .status-pending{background:#fff3cd;color:#856404}
-    .status-paid{background:#d4edda;color:#155724}
-    .status-rejected{background:#f8d7da;color:#721c24}
+    :root {
+      --primary-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      --secondary-gradient: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --glass-bg: rgba(255, 255, 255, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --text-dark: #2d3436;
+      --text-light: #ffffff;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background: var(--primary-gradient);
+      min-height: 100vh;
+      padding: 20px;
+      color: var(--text-dark);
+    }
+    
+    .app-container {
+      max-width: 500px;
+      margin: 0 auto;
+      backdrop-filter: blur(10px);
+      background: var(--glass-bg);
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    
+    header {
+      background: var(--secondary-gradient);
+      color: var(--text-light);
+      padding: 25px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      transform: rotate(30deg);
+    }
+    
+    h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .balance-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 20px auto;
+      width: 90%;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    
+    .balance-label {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .balance-amount {
+      font-size: 36px;
+      font-weight: 800;
+      color: #6a11cb;
+      margin-bottom: 5px;
+    }
+    
+    .current-date {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 10px;
+    }
+    
+    .content-section {
+      padding: 25px 20px;
+      background: var(--card-bg);
+      margin: 15px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+    
+    h2 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #6a11cb;
+      display: flex;
+      align-items: center;
+    }
+    
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 24px;
+      background: var(--primary-gradient);
+      border-radius: 10px;
+      margin-right: 12px;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: var(--text-light);
+      box-shadow: 0 4px 15px rgba(106, 17, 203, 0.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(106, 17, 203, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #f8f9fa;
+      color: #495057;
+      border: 1px solid #dee2e6;
+    }
+    
+    .btn-secondary:hover {
+      background: #e9ecef;
+    }
+    
+    .input-group {
+      margin-bottom: 15px;
+    }
+    
+    .input-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+      background: #f8f9fa;
+      transition: all 0.3s ease;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #6a11cb;
+      box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+    }
+    
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .status-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .status-paid {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status-rejected {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      background: #4caf50;
+      color: #fff;
+      border-radius: 12px;
+      display: none;
+      z-index: 2000;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    #adModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 1500;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+    
+    .ad-box {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 350px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    
+    .loading {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #eee;
+      border-top: 4px solid #6a11cb;
+      border-radius: 50%;
+      margin: 20px auto;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .ad-timer {
+      font-size: 20px;
+      font-weight: bold;
+      color: #6a11cb;
+      margin: 15px 0;
+    }
+    
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 15px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    th, td {
+      padding: 12px 8px;
+      border: 1px solid #e9ecef;
+      text-align: center;
+      font-size: 14px;
+    }
+    
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+    
+    .action-btn {
+      cursor: pointer;
+      padding: 6px 10px;
+      margin: 0 2px;
+      border-radius: 6px;
+      font-size: 12px;
+      border: none;
+      transition: all 0.2s ease;
+    }
+    
+    .approve {
+      background: #4caf50;
+      color: white;
+    }
+    
+    .reject {
+      background: #f44336;
+      color: white;
+    }
+    
+    .delete {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .section-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+    
+    .section-toggle h2 {
+      margin-bottom: 0;
+    }
+    
+    .toggle-icon {
+      font-size: 20px;
+      transition: transform 0.3s ease;
+    }
+    
+    .collapsed .toggle-icon {
+      transform: rotate(180deg);
+    }
+    
+    .hidden-section {
+      display: none;
+    }
+    
+    /* Admin Panel Styling */
+    .admin-login-form {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .admin-controls-panel {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    /* Withdrawal Form Styling */
+    .withdrawal-form {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      padding: 20px;
+      border-radius: 16px;
+      margin-top: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .form-title {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #6a11cb;
+      text-align: center;
+    }
+    
+    .method-cards {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .method-card {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #e4e8f0;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .method-card:hover {
+      border-color: #6a11cb;
+      background: rgba(106, 17, 203, 0.05);
+    }
+    
+    .method-card.selected {
+      border-color: #6a11cb;
+      background: rgba(106, 17, 203, 0.1);
+    }
+    
+    .method-icon {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+    
+    .method-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .amount-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .amount-btn {
+      padding: 12px;
+      border: 2px solid #e4e8f0;
+      border-radius: 12px;
+      background: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .amount-btn:hover {
+      border-color: #6a11cb;
+      background: rgba(106, 17, 203, 0.05);
+    }
+    
+    .amount-btn.selected {
+      border-color: #6a11cb;
+      background: rgba(106, 17, 203, 0.1);
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="app-container">
     <header>
       <h1>Earn Now</h1>
-      <div>Your Balance</div>
-      <div class="balance-amount">৳ <span id="balance">0.00</span></div>
-      <div id="current-date"></div>
+      <div class="balance-card">
+        <div class="balance-label">Your Balance</div>
+        <div class="balance-amount">৳ <span id="balance">0.00</span></div>
+      </div>
+      <div id="current-date" class="current-date"></div>
     </header>
 
-    <div style="padding:20px">
-      <h2>Watch Ads & Earn</h2>
-      <button class="btn btn-primary" id="watch-ad-btn">Watch Ad & Earn ৳<span id="per-ad-amount">0.01</span></button>
-
-      <h2>Withdraw</h2>
-      <button class="btn btn-secondary" id="withdraw-btn">Withdraw Money</button>
-      <div id="withdraw-form" style="display:none">
-        <select id="withdraw-method">
-          <option value="">Select method</option>
-          <option value="bkash">bKash</option>
-          <option value="nagad">Nagad</option>
-          <option value="recharge">Mobile Recharge</option>
-        </select>
-        <input type="text" id="account-number" placeholder="Account/Mobile Number">
-        <input type="number" id="withdraw-amount" placeholder="Amount (20 - 500)" min="20" max="500">
-        <button class="btn btn-primary" id="submit-withdraw">Submit</button>
-      </div>
-
-      <h3>Withdrawal History</h3>
-      <div id="history-items"></div>
-
-      <h2>Admin</h2>
-      <button class="btn btn-secondary" id="admin-btn">Admin Panel</button>
-      <div id="admin-panel" style="display:none">
-        <input type="password" id="admin-password" placeholder="Admin Password">
-        <button class="btn btn-primary" id="admin-login">Login</button>
-        <div id="admin-controls" style="display:none">
-          <label>Per Ad Rate:</label>
-          <input type="number" id="per-ad-rate" step="0.01" value="0.01">
-          <button class="btn btn-primary" id="save-settings">Save</button>
-          <h3>Withdrawal Requests</h3>
-          <table border="1" width="100%">
-            <thead><tr><th>User</th><th>Method</th><th>Number</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody id="withdraw-requests"></tbody>
-          </table>
+    <main>
+      <div class="content-section">
+        <div class="section-toggle" id="earn-section-toggle">
+          <h2>Watch Ads & Earn</h2>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div id="earn-section">
+          <button class="btn btn-primary" id="watch-ad-btn">
+            <span>👁️</span> Watch Ad & Earn ৳<span id="per-ad-amount">0.01</span>
+          </button>
         </div>
       </div>
+
+      <div class="content-section">
+        <div class="section-toggle" id="withdraw-section-toggle">
+          <h2>Withdraw Money</h2>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div id="withdraw-section">
+          <button class="btn btn-secondary" id="withdraw-btn">
+            <span>💸</span> Request Withdrawal
+          </button>
+          
+          <div id="withdraw-form" class="withdrawal-form hidden-section">
+            <div class="form-title">Withdrawal Request</div>
+            
+            <div class="input-group">
+              <div class="input-label">Select Method</div>
+              <div class="method-cards">
+                <div class="method-card" data-method="bkash">
+                  <div class="method-icon">📱</div>
+                  <div class="method-name">bKash</div>
+                </div>
+                <div class="method-card" data-method="nagad">
+                  <div class="method-icon">💳</div>
+                  <div class="method-name">Nagad</div>
+                </div>
+                <div class="method-card" data-method="recharge">
+                  <div class="method-icon">📞</div>
+                  <div class="method-name">Recharge</div>
+                </div>
+              </div>
+              <select id="withdraw-method" class="hidden-section">
+                <option value="">Select withdrawal method</option>
+                <option value="bkash">bKash</option>
+                <option value="nagad">Nagad</option>
+                <option value="recharge">Mobile Recharge</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <div class="input-label">Account/Mobile Number</div>
+              <input type="text" id="account-number" placeholder="Enter your number">
+            </div>
+            
+            <div class="input-group">
+              <div class="input-label">Select Amount (৳)</div>
+              <div class="amount-buttons">
+                <button class="amount-btn" data-amount="20">৳20</button>
+                <button class="amount-btn" data-amount="50">৳50</button>
+                <button class="amount-btn" data-amount="100">৳100</button>
+                <button class="amount-btn" data-amount="200">৳200</button>
+                <button class="amount-btn" data-amount="300">৳300</button>
+                <button class="amount-btn" data-amount="500">৳500</button>
+              </div>
+              <input type="number" id="withdraw-amount" placeholder="Enter amount (20 - 500)" min="20" max="500">
+            </div>
+            
+            <button class="btn btn-primary" id="submit-withdraw">
+              <span>✅</span> Submit Request
+            </button>
+          </div>
+
+          <h3 style="margin-top: 20px;">Withdrawal History</h3>
+          <div id="history-items"></div>
+        </div>
+      </div>
+
+      <div class="content-section">
+        <div class="section-toggle" id="admin-section-toggle">
+          <h2>Admin Panel</h2>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div id="admin-section" class="hidden-section">
+          <div class="admin-login-form">
+            <div class="input-group">
+              <div class="input-label">Admin Password</div>
+              <input type="password" id="admin-password" placeholder="Enter admin password">
+            </div>
+            <button class="btn btn-primary" id="admin-login">
+              <span>🔑</span> Login
+            </button>
+          </div>
+          
+          <div id="admin-controls" class="admin-controls-panel hidden-section">
+            <div class="form-title">Admin Settings</div>
+            
+            <div class="input-group">
+              <div class="input-label">Per Ad Rate (৳)</div>
+              <input type="number" id="per-ad-rate" step="0.01" value="0.01" min="0.01" placeholder="Enter amount per ad">
+            </div>
+            
+            <button class="btn btn-primary" id="save-settings">
+              <span>💾</span> Save Settings
+            </button>
+            
+            <h3 style="margin-top: 20px;">Withdrawal Requests</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th><th>Method</th><th>Number</th><th>Amount</th><th>Date</th><th>Status</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="withdraw-requests"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Ad Modal -->
+  <div id="adModal">
+    <div class="ad-box">
+      <h3>Advertisement</h3>
+      <div class="loading"></div>
+      <div class="ad-timer" id="adTimer">Ad starting...</div>
+      <button class="btn btn-primary" id="closeAd">Close Ad</button>
     </div>
   </div>
 
@@ -75,7 +603,13 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const tg = window.Telegram.WebApp; tg.expand();
+      const tg = window.Telegram.WebApp;
+      tg.expand();
+
+      let userId = "guest_" + Math.floor(Math.random()*99999);
+      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        userId = "user_" + tg.initDataUnsafe.user.id;
+      }
 
       const balanceEl = document.getElementById("balance");
       const perAdAmountEl = document.getElementById("per-ad-amount");
@@ -84,8 +618,6 @@
       const withdrawForm = document.getElementById("withdraw-form");
       const submitWithdrawBtn = document.getElementById("submit-withdraw");
       const historyItems = document.getElementById("history-items");
-      const adminBtn = document.getElementById("admin-btn");
-      const adminPanel = document.getElementById("admin-panel");
       const adminLoginBtn = document.getElementById("admin-login");
       const adminControls = document.getElementById("admin-controls");
       const perAdRateInput = document.getElementById("per-ad-rate");
@@ -93,24 +625,46 @@
       const withdrawRequestsTable = document.getElementById("withdraw-requests");
       const notification = document.getElementById("notification");
 
-      let userData = { balance: 0, perAdRate: 0.01, userId: "User" + Math.floor(Math.random()*9000) };
-      let withdrawalRequests = [];
+      const adModal = document.getElementById("adModal");
+      const adTimer = document.getElementById("adTimer");
+      const closeAdBtn = document.getElementById("closeAd");
 
-      // Load from localStorage
+      // Section toggles
+      const earnSectionToggle = document.getElementById("earn-section-toggle");
+      const withdrawSectionToggle = document.getElementById("withdraw-section-toggle");
+      const adminSectionToggle = document.getElementById("admin-section-toggle");
+      
+      const earnSection = document.getElementById("earn-section");
+      const withdrawSection = document.getElementById("withdraw-section");
+      const adminSection = document.getElementById("admin-section");
+
+      // Withdrawal form elements
+      const methodCards = document.querySelectorAll('.method-card');
+      const amountButtons = document.querySelectorAll('.amount-btn');
+      const withdrawMethodSelect = document.getElementById('withdraw-method');
+      const accountNumberInput = document.getElementById('account-number');
+      const withdrawAmountInput = document.getElementById('withdraw-amount');
+
+      let userData = { balance: 0, userId: userId };
+      let allRequests = JSON.parse(localStorage.getItem("allRequests")||"[]");
+      let perAdRate = parseFloat(localStorage.getItem("perAdRate")||"0.01");
+
       function loadData() {
-        const d = localStorage.getItem("earnNowUserData");
+        const d = localStorage.getItem(userId+"_data");
         if (d) userData = JSON.parse(d);
-        const req = localStorage.getItem("earnNowRequests");
-        if (req) withdrawalRequests = JSON.parse(req);
+        else userData = {balance:0,userId:userId};
         updateUI();
       }
+      
       function saveData() {
-        localStorage.setItem("earnNowUserData", JSON.stringify(userData));
-        localStorage.setItem("earnNowRequests", JSON.stringify(withdrawalRequests));
+        localStorage.setItem(userId+"_data", JSON.stringify(userData));
+        localStorage.setItem("allRequests", JSON.stringify(allRequests));
+        localStorage.setItem("perAdRate", perAdRate);
       }
+
       function updateUI() {
         balanceEl.textContent = userData.balance.toFixed(2);
-        perAdAmountEl.textContent = userData.perAdRate.toFixed(2);
+        perAdAmountEl.textContent = perAdRate.toFixed(2);
         updateHistory();
         updateRequestsTable();
       }
@@ -124,77 +678,184 @@
 
       function updateHistory() {
         historyItems.innerHTML = "";
-        withdrawalRequests.filter(r=>r.userId===userData.userId).forEach(r=>{
+        const userRequests = allRequests.filter(r=>r.userId===userId);
+        
+        if (userRequests.length === 0) {
+          historyItems.innerHTML = '<div style="text-align: center; padding: 15px; color: #666;">No withdrawal history yet</div>';
+          return;
+        }
+        
+        userRequests.forEach(r=>{
           let div = document.createElement("div");
-          div.innerHTML = `${r.method} ৳${r.amount} - <span class="status-badge status-${r.status}">${r.status}</span>`;
+          div.className = "history-item";
+          div.innerHTML = `
+            <div>
+              <strong>${r.method}</strong> - ৳${r.amount}
+              <div style="font-size: 12px; color: #666;">${r.date}</div>
+            </div>
+            <span class="status-badge status-${r.status}">${r.status}</span>
+          `;
           historyItems.appendChild(div);
         });
       }
 
       function updateRequestsTable() {
         withdrawRequestsTable.innerHTML = "";
-        withdrawalRequests.forEach((r,i)=>{
+        
+        if (allRequests.length === 0) {
+          withdrawRequestsTable.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 20px; color: #666;">
+                No withdrawal requests yet
+              </td>
+            </tr>
+          `;
+          return;
+        }
+        
+        allRequests.forEach((r,i)=>{
           let row = document.createElement("tr");
           row.innerHTML = `
             <td>${r.userId}</td>
             <td>${r.method}</td>
             <td>${r.number}</td>
             <td>৳${r.amount}</td>
+            <td>${r.date}</td>
             <td><span class="status-badge status-${r.status}">${r.status}</span></td>
             <td>
-              <button onclick="approveReq(${i})">Approve</button>
-              <button onclick="rejectReq(${i})">Reject</button>
+              <button class="action-btn approve" onclick="approveReq(${i})">✔</button>
+              <button class="action-btn reject" onclick="rejectReq(${i})">✖</button>
+              <button class="action-btn delete" onclick="deleteReq(${i})">❌</button>
             </td>`;
           withdrawRequestsTable.appendChild(row);
         });
       }
 
-      // Expose admin functions
-      window.approveReq = (i)=>{
-        withdrawalRequests[i].status="paid"; saveData(); updateUI();
-      }
-      window.rejectReq = (i)=>{
-        withdrawalRequests[i].status="rejected"; saveData(); updateUI();
-      }
+      window.approveReq = (i)=>{ allRequests[i].status="paid"; saveData(); updateUI(); }
+      window.rejectReq = (i)=>{ allRequests[i].status="rejected"; saveData(); updateUI(); }
+      window.deleteReq = (i)=>{ allRequests.splice(i,1); saveData(); updateUI(); }
 
-      // === Event Listeners ===
+      // === Ad Watch ===
       watchAdBtn.onclick = ()=>{
-        window.showAdexora()
-          .then(()=>{
-            userData.balance += userData.perAdRate;
-            saveData(); updateUI();
-            showNotification("✅ Ad watched! You earned ৳"+userData.perAdRate.toFixed(2));
-          })
-          .catch(e=>{
-            showNotification("❌ Failed to load ad","error");
-          });
-      };
+        adModal.style.display="flex";
+        adTimer.textContent = "Loading ad...";
+        closeAdBtn.style.display="none";
 
-      withdrawBtn.onclick = ()=> withdrawForm.style.display = withdrawForm.style.display==="none" ? "block" : "none";
+        if(typeof window.showAdexora === "function"){
+          window.showAdexora()
+            .then(()=>{
+              let timeLeft = 5;
+              adTimer.textContent = "Watch time: " + timeLeft + "s";
+              let interval = setInterval(()=>{
+                timeLeft--;
+                adTimer.textContent = "Watch time: " + timeLeft + "s";
+                if(timeLeft<=0){
+                  clearInterval(interval);
+                  closeAdBtn.style.display="block";
+                  adTimer.textContent = "✅ Ad finished!";
+                  userData.balance += perAdRate;
+                  saveData(); updateUI();
+                  showNotification("You earned ৳"+perAdRate.toFixed(2));
+                }
+              },1000);
+            })
+            .catch(e=>{
+              adModal.style.display="none";
+              showNotification("❌ Failed to load ad",false);
+              console.error("Adexora error:", e);
+            });
+        } else {
+          adModal.style.display="none";
+          showNotification("❌ Ad service not available",false);
+        }
+      };
+      
+      closeAdBtn.onclick = ()=> adModal.style.display="none";
+
+      // Withdraw
+      withdrawBtn.onclick = ()=> {
+        withdrawForm.classList.toggle("hidden-section");
+      };
+      
+      // Method card selection
+      methodCards.forEach(card => {
+        card.addEventListener('click', () => {
+          methodCards.forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          withdrawMethodSelect.value = card.dataset.method;
+        });
+      });
+      
+      // Amount button selection
+      amountButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          amountButtons.forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          withdrawAmountInput.value = btn.dataset.amount;
+        });
+      });
+      
       submitWithdrawBtn.onclick = ()=>{
-        let method=document.getElementById("withdraw-method").value;
-        let number=document.getElementById("account-number").value;
-        let amount=parseFloat(document.getElementById("withdraw-amount").value);
+        let method = withdrawMethodSelect.value;
+        let number = accountNumberInput.value;
+        let amount = parseFloat(withdrawAmountInput.value);
+        
         if(!method || !number || isNaN(amount)) return showNotification("⚠️ Fill all fields",false);
         if(amount<20||amount>500) return showNotification("⚠️ Amount must be 20-500",false);
         if(userData.balance<amount) return showNotification("⚠️ Insufficient balance",false);
+        
         userData.balance -= amount;
-        withdrawalRequests.push({userId:userData.userId,method,number,amount,status:"pending"});
-        saveData(); updateUI();
+        allRequests.push({
+          userId:userData.userId,method,number,amount,
+          status:"pending",date:new Date().toLocaleString()
+        });
+        
+        saveData(); 
+        updateUI();
+        withdrawForm.classList.add("hidden-section");
+        
+        // Reset form
+        methodCards.forEach(c => c.classList.remove('selected'));
+        amountButtons.forEach(b => b.classList.remove('selected'));
+        withdrawMethodSelect.value = "";
+        accountNumberInput.value = "";
+        withdrawAmountInput.value = "";
+        
         showNotification("✅ Withdraw request submitted");
       };
 
-      adminBtn.onclick = ()=> adminPanel.style.display = adminPanel.style.display==="none" ? "block" : "none";
+      // Admin
       adminLoginBtn.onclick = ()=>{
         const pass=document.getElementById("admin-password").value;
-        if(pass==="admin123"){ adminControls.style.display="block"; showNotification("✅ Admin logged in"); }
-        else showNotification("❌ Wrong password",false);
+        if(pass==="eatt7242888"){
+          adminControls.classList.remove("hidden-section");
+          showNotification("✅ Admin logged in");
+        } else {
+          showNotification("❌ Wrong password",false);
+        }
       };
+      
       saveSettingsBtn.onclick = ()=>{
-        userData.perAdRate = parseFloat(perAdRateInput.value)||0.01;
+        perAdRate = parseFloat(perAdRateInput.value)||0.01;
         saveData(); updateUI();
         showNotification("✅ Settings saved");
       };
+
+      // Section toggle functionality
+      earnSectionToggle.addEventListener("click", () => {
+        earnSection.classList.toggle("hidden-section");
+        earnSectionToggle.classList.toggle("collapsed");
+      });
+      
+      withdrawSectionToggle.addEventListener("click", () => {
+        withdrawSection.classList.toggle("hidden-section");
+        withdrawSectionToggle.classList.toggle("collapsed");
+      });
+      
+      adminSectionToggle.addEventListener("click", () => {
+        adminSection.classList.toggle("hidden-section");
+        adminSectionToggle.classList.toggle("collapsed");
+      });
 
       // Init
       loadData();
@@ -202,4 +863,4 @@
     });
   </script>
 </body>
-  </html>
+                                              </html>
