@@ -567,7 +567,7 @@
             
             <div class="input-group">
               <div class="input-label">Per Ad Rate (৳)</div>
-              <input type="number" id="per-ad-rate" step="0.06" value="0.06" min="0.01" placeholder="Enter amount per ad">
+              <input type="number" id="per-ad-rate" step="0.06" value="0.06" min="0.06" placeholder="Enter amount per ad">
             </div>
             
             <button class="btn btn-primary" id="save-settings">
@@ -649,7 +649,7 @@
 
       let userData = { balance: 0, userId: userId };
       let allRequests = JSON.parse(localStorage.getItem("allRequests")||"[]");
-      let perAdRate = parseFloat(localStorage.getItem("perAdRate")||"0.01");
+      let perAdRate = parseFloat(localStorage.getItem("perAdRate")||"0.06");
       let isAdminLoggedIn = false;
 
       function loadData() {
