@@ -653,16 +653,21 @@
       let isAdminLoggedIn = false;
 
       function loadData() {
+        // Always get the current per-ad rate from localStorage
+        perAdRate = parseFloat(localStorage.getItem("perAdRate")||"0.06");
+        
+        // Load user data
         const d = localStorage.getItem(userId+"_data");
         if (d) userData = JSON.parse(d);
-        else userData = {balance:0,userId:userId};
+        else userData = {balance:0, userId:userId};
+        
         updateUI();
       }
       
       function saveData() {
         localStorage.setItem(userId+"_data", JSON.stringify(userData));
         localStorage.setItem("allRequests", JSON.stringify(allRequests));
-        localStorage.setItem("perAdRate", perAdRate);
+        localStorage.setItem("perAdRate", perAdRate.toString());
       }
 
       function updateUI() {
@@ -771,6 +776,9 @@
         adTimer.textContent = "Loading ad...";
         closeAdBtn.style.display="none";
 
+        // Get the current per-ad rate to ensure it's up to date
+        const currentPerAdRate = parseFloat(localStorage.getItem("perAdRate")||"0.06");
+        
         if(typeof window.showAdexora === "function"){
           window.showAdexora()
             .then(()=>{
@@ -783,9 +791,9 @@
                   clearInterval(interval);
                   closeAdBtn.style.display="block";
                   adTimer.textContent = "✅ Ad finished!";
-                  userData.balance += perAdRate;
+                  userData.balance += currentPerAdRate;
                   saveData(); updateUI();
-                  showNotification("You earned ৳"+perAdRate.toFixed(2));
+                  showNotification("You earned ৳"+currentPerAdRate.toFixed(2));
                 }
               },1000);
             })
@@ -805,9 +813,9 @@
               clearInterval(interval);
               closeAdBtn.style.display="block";
               adTimer.textContent = "✅ Ad finished!";
-              userData.balance += perAdRate;
+              userData.balance += currentPerAdRate;
               saveData(); updateUI();
-              showNotification("You earned ৳"+perAdRate.toFixed(2));
+              showNotification("You earned ৳"+currentPerAdRate.toFixed(2));
             }
           },1000);
         }
@@ -873,6 +881,8 @@
         if(pass==="eatt7242888"){
           isAdminLoggedIn = true;
           adminControls.classList.remove("hidden-section");
+          // Set the current per-ad rate in the admin input
+          perAdRateInput.value = perAdRate.toFixed(2);
           showNotification("✅ Admin logged in");
         } else {
           showNotification("❌ Wrong password",false);
@@ -881,7 +891,8 @@
       
       saveSettingsBtn.onclick = ()=>{
         perAdRate = parseFloat(perAdRateInput.value)||0.06;
-        saveData(); updateUI();
+        saveData(); 
+        updateUI();
         showNotification("✅ Settings saved");
       };
 
@@ -912,4 +923,4 @@
     });
   </script>
 </body>
-                                              </html>
+  </html>
