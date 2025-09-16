@@ -234,57 +234,6 @@
             display: none;
             z-index: 1000;
         }
-        
-        .ad-container {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-            z-index: 1001;
-            text-align: center;
-            width: 320px;
-        }
-        
-        .ad-content {
-            margin: 15px 0;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: #f0f0f0;
-            border-radius: 10px;
-        }
-        
-        .ad-timer {
-            font-size: 18px;
-            margin: 10px 0;
-            color: #6a11cb;
-            font-weight: bold;
-        }
-        
-        .btn-action {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 0 5px;
-        }
-        
-        .btn-approve {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .btn-reject {
-            background: #f44336;
-            color: white;
-        }
     </style>
 </head>
 <body>
@@ -373,14 +322,31 @@
                             <tr>
                                 <th>User</th>
                                 <th>Method</th>
-                                <th>Account Number</th>
                                 <th>Amount</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="withdraw-requests">
-                            <!-- Requests will be added dynamically -->
+                            <tr>
+                                <td>User1234</td>
+                                <td>bKash</td>
+                                <td>৳50</td>
+                                <td><span class="status-badge status-pending">Pending</span></td>
+                                <td>
+                                    <button class="btn-action approve">Approve</button>
+                                    <button class="btn-action reject">Reject</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>User5678</td>
+                                <td>Nagad</td>
+                                <td>৳100</td>
+                                <td><span class="status-badge status-paid">Paid</span></td>
+                                <td>
+                                    <button class="btn-action" disabled>Completed</button>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -393,16 +359,6 @@
     </div>
     
     <div class="notification" id="notification"></div>
-    
-    <div class="ad-container" id="ad-container">
-        <h3>Advertisement</h3>
-        <div class="ad-content">
-            <p>This is a sample advertisement</p>
-            <p>Please watch for <span id="ad-timer">5</span> seconds</p>
-        </div>
-        <div class="ad-timer" id="ad-timer-display">5 seconds remaining</div>
-        <button class="btn btn-primary" id="close-ad" disabled>Close Ad</button>
-    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -426,10 +382,6 @@
             const perAdRateInput = document.getElementById('per-ad-rate');
             const saveSettingsBtn = document.getElementById('save-settings');
             const notification = document.getElementById('notification');
-            const adContainer = document.getElementById('ad-container');
-            const adTimer = document.getElementById('ad-timer');
-            const adTimerDisplay = document.getElementById('ad-timer-display');
-            const closeAdBtn = document.getElementById('close-ad');
             
             // User data (in a real app, this would be stored in a database)
             let userData = {
@@ -441,11 +393,10 @@
             };
             
             // Withdrawal requests (in a real app, this would be stored in a database)
-            let withdrawalRequests = [];
-            
-            // Ad watching state
-            let adInterval;
-            let adSecondsLeft = 5;
+            let withdrawalRequests = [
+                { id: 1, userId: 'User1234', method: 'bkash', amount: 50, status: 'pending', accountNumber: '01XXXXXXXXX' },
+                { id: 2, userId: 'User5678', method: 'nagad', amount: 100, status: 'paid', accountNumber: '01XXXXXXXXX' }
+            ];
             
             // Initialize the app
             function initApp() {
@@ -453,12 +404,6 @@
                 const savedData = localStorage.getItem('earnNowUserData');
                 if (savedData) {
                     userData = JSON.parse(savedData);
-                }
-                
-                // Load withdrawal requests
-                const savedRequests = localStorage.getItem('earnNowWithdrawalRequests');
-                if (savedRequests) {
-                    withdrawalRequests = JSON.parse(savedRequests);
                 }
                 
                 // Check if it's a new day to reset ad count
@@ -498,11 +443,6 @@
                 localStorage.setItem('earnNowUserData', JSON.stringify(userData));
             }
             
-            // Save withdrawal requests to localStorage
-            function saveWithdrawalRequests() {
-                localStorage.setItem('earnNowWithdrawalRequests', JSON.stringify(withdrawalRequests));
-            }
-            
             // Show notification
             function showNotification(message, isSuccess = true) {
                 notification.textContent = message;
@@ -516,40 +456,24 @@
             
             // Watch ad button click
             watchAdBtn.addEventListener('click', function() {
-                // Show ad container
-                adContainer.style.display = 'block';
-                adSecondsLeft = 5;
-                adTimer.textContent = adSecondsLeft;
-                adTimerDisplay.textContent = `${adSecondsLeft} seconds remaining`;
-                closeAdBtn.disabled = true;
+                // Simulate ad loading
+                watchAdBtn.textContent = 'Loading ad...';
+                watchAdBtn.disabled = true;
                 
-                // Start countdown
-                adInterval = setInterval(function() {
-                    adSecondsLeft--;
-                    adTimer.textContent = adSecondsLeft;
-                    adTimerDisplay.textContent = `${adSecondsLeft} seconds remaining`;
+                setTimeout(() => {
+                    // Simulate ad view completion
+                    userData.balance += userData.perAdRate;
+                    userData.adsWatchedToday++;
+                    userData.totalEarnings += userData.perAdRate;
                     
-                    if (adSecondsLeft <= 0) {
-                        clearInterval(adInterval);
-                        closeAdBtn.disabled = false;
-                    }
-                }, 1000);
-            });
-            
-            // Close ad button
-            closeAdBtn.addEventListener('click', function() {
-                // Hide ad container
-                adContainer.style.display = 'none';
-                
-                // Add money to user's account
-                userData.balance += userData.perAdRate;
-                userData.adsWatchedToday++;
-                userData.totalEarnings += userData.perAdRate;
-                
-                saveUserData();
-                updateUI();
-                
-                showNotification(`You earned ৳${userData.perAdRate.toFixed(2)} from watching an ad!`);
+                    saveUserData();
+                    updateUI();
+                    
+                    watchAdBtn.textContent = `Watch Ad & Earn ৳${userData.perAdRate.toFixed(2)}`;
+                    watchAdBtn.disabled = false;
+                    
+                    showNotification(`You earned ৳${userData.perAdRate.toFixed(2)} from watching an ad!`);
+                }, 2000);
             });
             
             // Withdraw button click
@@ -599,8 +523,10 @@
                     accountNumber: accountNumber
                 });
                 
-                // Save withdrawal requests
-                saveWithdrawalRequests();
+                // Deduct amount from balance
+                userData.balance -= amount;
+                saveUserData();
+                updateUI();
                 
                 // Reset form
                 document.getElementById('withdraw-method').value = '';
@@ -650,13 +576,6 @@
                 const tableBody = document.getElementById('withdraw-requests');
                 tableBody.innerHTML = '';
                 
-                if (withdrawalRequests.length === 0) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td colspan="6" style="text-align: center;">No withdrawal requests</td>`;
-                    tableBody.appendChild(row);
-                    return;
-                }
-                
                 withdrawalRequests.forEach(request => {
                     const row = document.createElement('tr');
                     
@@ -674,13 +593,12 @@
                     row.innerHTML = `
                         <td>${request.userId}</td>
                         <td>${request.method}</td>
-                        <td>${request.accountNumber}</td>
                         <td>৳${request.amount}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td>
                             ${request.status === 'pending' ? 
-                                `<button class="btn-action btn-approve" data-id="${request.id}">Approve</button>
-                                 <button class="btn-action btn-reject" data-id="${request.id}">Reject</button>` :
+                                `<button class="btn-action approve" data-id="${request.id}">Approve</button>
+                                 <button class="btn-action reject" data-id="${request.id}">Reject</button>` :
                                 `<button class="btn-action" disabled>Completed</button>`
                             }
                         </td>
@@ -690,30 +608,32 @@
                 });
                 
                 // Add event listeners to action buttons
-                document.querySelectorAll('.btn-approve').forEach(btn => {
+                document.querySelectorAll('.approve').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const requestId = parseInt(this.getAttribute('data-id'));
-                        const requestIndex = withdrawalRequests.findIndex(r => r.id === requestId);
+                        const request = withdrawalRequests.find(r => r.id === requestId);
                         
-                        if (requestIndex !== -1) {
-                            withdrawalRequests[requestIndex].status = 'paid';
-                            saveWithdrawalRequests();
+                        if (request) {
+                            request.status = 'paid';
                             updateWithdrawalTable();
                             showNotification('Payment approved');
                         }
                     });
                 });
                 
-                document.querySelectorAll('.btn-reject').forEach(btn => {
+                document.querySelectorAll('.reject').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const requestId = parseInt(this.getAttribute('data-id'));
-                        const requestIndex = withdrawalRequests.findIndex(r => r.id === requestId);
+                        const request = withdrawalRequests.find(r => r.id === requestId);
                         
-                        if (requestIndex !== -1) {
-                            // Return funds to user (only if not already deducted)
-                            // In this implementation, funds are only deducted when request is approved
-                            withdrawalRequests[requestIndex].status = 'rejected';
-                            saveWithdrawalRequests();
+                        if (request) {
+                            request.status = 'rejected';
+                            
+                            // Return funds to user
+                            userData.balance += request.amount;
+                            saveUserData();
+                            updateUI();
+                            
                             updateWithdrawalTable();
                             showNotification('Payment rejected');
                         }
