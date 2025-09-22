@@ -14,7 +14,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   
   <style>
-    /* Your existing CSS styles remain unchanged */
     :root {
       --primary-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
       --secondary-gradient: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
@@ -349,7 +348,7 @@
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
-      margin-bottom: 极15px;
+      margin-bottom: 15px;
     }
     
     .section-toggle h2 {
@@ -358,7 +357,7 @@
     
     .toggle-icon {
       font-size: 20px;
-      transition: transform 极0.3s ease;
+      transition: transform 0.3s ease;
     }
     
     .collapsed .toggle-icon {
@@ -375,7 +374,7 @@
       padding: 20px;
       border-radius: 16px;
       margin-bottom: 20px;
-      box-shadow: 0 5极px 15px rgba(0,0,0,0.05);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
     
     .admin-controls-panel {
@@ -411,7 +410,7 @@
       flex: 1;
       padding: 12px;
       border: 2px solid #e4e8f0;
-      border-radius: 12极px;
+      border-radius: 12px;
       text-align: center;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -442,7 +441,7 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
       margin-bottom: 15px;
-极    }
+    }
     
     .amount-btn {
       padding: 12px;
@@ -454,7 +453,7 @@
       transition: all 0.3s ease;
     }
     
-    .极amount-btn:hover {
+    .amount-btn:hover {
       border-color: #6a11cb;
       background: rgba(106, 17, 203, 0.05);
     }
@@ -462,89 +461,6 @@
     .amount-btn.selected {
       border-color: #6a11cb;
       background: rgba(106, 17, 203, 0.1);
-    }
-    
-    /* VPN Settings Styling */
-    .vpn-settings {
-      background: white;
-      padding: 20px;
-      border-radius: 16px;
-      margin-top: 20px;
-      box-shadow: 0 5px 15px rgba(0,0,0,极0.05);
-    }
-    
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 60px;
-      height: 30px;
-    }
-    
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-     极 background-color: #ccc;
-      transition: .4s;
-      border-radius: 30px;
-    }
-    
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 22px;
-      width: 22px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-    
-    input:checked + .slider {
-      background-color: #6a11cb;
-    }
-    
-    input:checked + .slider:before {
-      transform: translateX(30px);
-    }
-    
-    .toggle-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 15px;
-    }
-    
-    .toggle-label {
-      font-weight: 600;
-      color: #555;
-    }
-    
-    .country-code-input {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    
-    .country-code-input input {
-      flex: 1;
-    }
-    
-    .ip-port-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 15px;
     }
     
     /* Country Restriction Styling */
@@ -562,7 +478,7 @@
     }
     
     .country-search input {
-      padding-left: 40极px;
+      padding-left: 40px;
     }
     
     .search-icon {
@@ -582,7 +498,7 @@
     
     .tier-btn {
       padding: 10px;
-      border: 2px solid #e4极e8f0;
+      border: 2px solid #e4e8f0;
       border-radius: 8px;
       background: white;
       font-weight: 600;
@@ -598,7 +514,7 @@
     
     .tier-btn.selected {
       border-color: #6a11cb;
-      background: rgba(106, 17, 203, 极0.1);
+      background: rgba(106, 17, 203, 0.1);
     }
     
     .tier-high {
@@ -683,7 +599,7 @@
       flex: 1;
     }
     
-    .极user-name {
+    .user-name {
       font-weight: 600;
     }
     
@@ -711,7 +627,7 @@
     
     .edit-balance-form input {
       flex: 1;
-极    }
+    }
     
     /* Firebase loading indicator */
     .firebase-loading {
@@ -759,7 +675,7 @@
       font-size: 12px;
     }
     
-    .user-activity-table极 th {
+    .user-activity-table th {
       background-color: #f8f9fa;
       font-weight: 600;
     }
@@ -773,7 +689,7 @@
     }
     
     .blocked-user {
-      background-color: #fff5极f5;
+      background-color: #fff5f5;
       border: 1px solid #ffcccc;
     }
     
@@ -796,7 +712,7 @@
     
     .activity-ad {
       background: #e3f2fd;
-     极 color: #1976d2;
+      color: #1976d2;
     }
     
     .activity-withdrawal {
@@ -835,7 +751,7 @@
 </head>
 <body>
   <div class="firebase-loading" id="firebaseLoading">
-    <div style极="text-align: center;">
+    <div style="text-align: center;">
       <div class="loading"></div>
       <p>Connecting to server...</p>
     </div>
@@ -866,7 +782,7 @@
 
       <div class="content-section">
         <div class="section-toggle" id="withdraw-section-toggle">
-          <h2>Withdraw Money</极h2>
+          <h2>Withdraw Money</h2>
           <span class="toggle-icon">▼</span>
         </div>
         <div id="withdraw-section">
@@ -890,7 +806,7 @@
                 </div>
                 <div class="method-card" data-method="recharge">
                   <div class="method-icon">📞</div>
-                  <极div class="method-name">Recharge</div>
+                  <div class="method-name">Recharge</div>
                 </div>
               </div>
               <select id="withdraw-method" class="hidden-section">
@@ -901,8 +817,8 @@
               </select>
             </div>
             
-            <div class="极input-group">
-              <div class="input极-label">Account/Mobile Number</div>
+            <div class="input-group">
+              <div class="input-label">Account/Mobile Number</div>
               <input type="text" id="account-number" placeholder="Enter your number">
             </div>
             
@@ -912,7 +828,7 @@
                 <button class="amount-btn" data-amount="20">৳20</button>
                 <button class="amount-btn" data-amount="50">৳50</button>
                 <button class="amount-btn" data-amount="100">৳100</button>
-                <button class="amount-btn极" data-amount="200">৳200</button>
+                <button class="amount-btn" data-amount="200">৳200</button>
                 <button class="amount-btn" data-amount="300">৳300</button>
                 <button class="amount-btn" data-amount="500">৳500</button>
               </div>
@@ -936,11 +852,11 @@
         </div>
         <div id="admin-section" class="hidden-section">
           <div class="admin-login-form">
-            <极div class="input-group">
+            <div class="input-group">
               <div class="input-label">Admin Password</div>
               <input type="password" id="admin-password" placeholder="Enter admin password">
             </div>
-            <button class="btn btn-primary"极 id="admin-log极in">
+            <button class="btn btn-primary" id="admin-login">
               <span>🔑</span> Login
             </button>
           </div>
@@ -970,7 +886,7 @@
               <div class="countries-list" id="countries-list"></div>
               
               <div class="input-group">
-                <div class="input-label">Selected Countries</极div>
+                <div class="input-label">Selected Countries</div>
                 <div id="selected-countries"></div>
               </div>
             </div>
@@ -978,7 +894,7 @@
             <div class="user-management">
               <h3>User Management</h3>
               
-              <div class="极user-search">
+              <div class="user-search">
                 <span class="search-icon">🔍</span>
                 <input type="text" id="user-search" placeholder="Search users...">
               </div>
@@ -995,7 +911,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>User</th><th>Method</th><th>Number</th><th>Amount</th><极th>Date</th><th>Status</th><th>Action</th>
+                    <th>User</th><th>Method</th><th>Number</th><th>Amount</th><th>Date</th><th>Status</th><th>Action</th>
                   </tr>
                 </thead>
                 <tbody id="withdraw-requests"></tbody>
@@ -1023,7 +939,7 @@
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDp49URVg2ipSBuoEBGZyqWWyc29cxAleE",
-      authDomain: "easy-earn-af82极c.firebaseapp.com",
+      authDomain: "easy-earn-af82c.firebaseapp.com",
       projectId: "easy-earn-af82c",
       storageBucket: "easy-earn-af82c.firebasestorage.app",
       messagingSenderId: "572340074151",
@@ -1052,8 +968,8 @@
         {code: "FR", name: "France", tier: "high"},
         {code: "JP", name: "Japan", tier: "high"},
         {code: "KR", name: "South Korea", tier: "high"},
-        {code极: "SG", name: "Singapore", tier: "high"},
-        {code: "NL", name: "Netherlands", tier: "极high"},
+        {code: "SG", name: "Singapore", tier: "high"},
+        {code: "NL", name: "Netherlands", tier: "high"},
         {code: "SE", name: "Sweden", tier: "high"},
         {code: "NO", name: "Norway", tier: "high"},
         {code: "CH", name: "Switzerland", tier: "high"},
@@ -1074,7 +990,7 @@
         {code: "ZA", name: "South Africa", tier: "medium"},
         {code: "AR", name: "Argentina", tier: "medium"},
         {code: "CL", name: "Chile", tier: "medium"},
-        {code: "CO", name极: "Colombia", tier: "medium"},
+        {code: "CO", name: "Colombia", tier: "medium"},
         {code: "MY", name: "Malaysia", tier: "medium"},
         {code: "TH", name: "Thailand", tier: "medium"},
         {code: "ID", name: "Indonesia", tier: "medium"},
@@ -1089,11 +1005,11 @@
         {code: "KE", name: "Kenya", tier: "low"},
         {code: "GH", name: "Ghana", tier: "low"},
         {code: "TZ", name: "Tanzania", tier: "low"},
-        {code: "极UG", name: "Uganda", tier: "low"},
+        {code: "UG", name: "Uganda", tier: "low"},
         {code: "MM", name: "Myanmar", tier: "low"},
-        {code: "KH", name: "Cambodia", tier: "极low"},
+        {code: "KH", name: "Cambodia", tier: "low"},
         {code: "LA", name: "Laos", tier: "low"},
-        {code: "NP", name极: "Nepal", tier: "low"},
+        {code: "NP", name: "Nepal", tier: "low"},
         {code: "LK", name: "Sri Lanka", tier: "low"}
       ];
 
@@ -1119,7 +1035,7 @@
                 <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary-gradient); color: white; text-align: center; padding: 20px;">
                   <div>
                     <h2>Access Restricted</h2>
-                    <极p>This application is not available in your country (${userCountry}).</p>
+                    <p>This application is not available in your country (${userCountry}).</p>
                     <p>Please contact support if you believe this is an error.</p>
                   </div>
                 </div>
@@ -1153,7 +1069,7 @@
       const withdrawForm = document.getElementById("withdraw-form");
       const submitWithdrawBtn = document.getElementById("submit-withdraw");
       const historyItems = document.getElementById("history-items");
-      const adminLoginBtn = document.getElementById("admin极-login");
+      const adminLoginBtn = document.getElementById("admin-login");
       const adminControls = document.getElementById("admin-controls");
       const perAdRateInput = document.getElementById("per-ad-rate");
       const saveSettingsBtn = document.getElementById("save-settings");
@@ -1199,7 +1115,7 @@
       async function getUserLocation() {
         try {
           const ipResponse = await fetch('https://api.ipify.org?format=json');
-          const ip极Data = await ipResponse.json();
+          const ipData = await ipResponse.json();
           userIP = ipData.ip;
           
           const locationResponse = await fetch(`https://ipapi.co/${userIP}/json/`);
@@ -1232,7 +1148,7 @@
             // Check if user is blocked
             if (userData.isBlocked) {
               document.body.innerHTML = `
-                <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary-gradient); color: white极; text-align: center; padding: 20px;">
+                <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary-gradient); color: white; text-align: center; padding: 20px;">
                   <div>
                     <h2>Account Blocked</h2>
                     <p>Your account has been blocked by the administrator.</p>
@@ -1280,7 +1196,7 @@
         }
       }
 
-      async function loadAllUsers极() {
+      async function loadAllUsers() {
         try {
           const usersSnapshot = await db.collection("users").get();
           
@@ -1351,11 +1267,11 @@
       async function deleteWithdrawalRequest(index) {
         try {
           const request = allRequests[index];
-          // Since we don't have document IDs stored, we need极 to query by unique fields
+          // Since we don't have document IDs stored, we need to query by unique fields
           const querySnapshot = await db.collection("withdrawalRequests")
             .where("userId", "==", request.userId)
             .where("date", "==", request.date)
-            .极get();
+            .get();
           
           if (!querySnapshot.empty) {
             const docId = querySnapshot.docs[0].id;
@@ -1446,7 +1362,7 @@
               <strong>${r.method}</strong> - ৳${r.amount}
               <div style="font-size: 12px; color: #666;">${r.date}</div>
             </div>
-            <span class="status-badge status-${r.status}">${极r.status}</span>
+            <span class="status-badge status-${r.status}">${r.status}</span>
           `;
           historyItems.appendChild(div);
         });
@@ -1500,7 +1416,7 @@
         document.querySelectorAll('.reject').forEach(btn => {
           btn.addEventListener('click', async () => {
             const index = btn.getAttribute('data-index');
-            allRequests[index极].status = "rejected";
+            allRequests[index].status = "rejected";
             
             // Update in Firebase
             await updateWithdrawalRequest(index, { status: "rejected" });
@@ -1646,7 +1562,7 @@
               <div class="user-id">@${user.username} | ${user.userId}</div>
               ${user.country ? `<div><img src="${flagUrl}" class="flag-icon" alt="${user.country}"> ${user.country}</div>` : ''}
             </div>
-            <div class="极user-balance">৳${user.balance.toFixed(2)}</div>
+            <div class="user-balance">৳${user.balance.toFixed(2)}</div>
             <div class="user-actions">
               <button class="action-btn approve edit-user" data-user="${user.userId}">✏️</button>
               ${user.isBlocked ? 
@@ -1677,7 +1593,7 @@
         });
         
         // Add event listeners to unblock buttons
-        document.querySelectorAll('.unblock-user').forEach(btn极 => {
+        document.querySelectorAll('.unblock-user').forEach(btn => {
           btn.addEventListener('click', async () => {
             const userId = btn.getAttribute('data-user');
             await blockUser(userId, false);
@@ -1727,10 +1643,10 @@
             allUsers[userIndex].balance = newBalance;
             
             // Update in Firebase
-            await updateUser极InAllUsers(userId, { balance: newBalance });
+            await updateUserInAllUsers(userId, { balance: newBalance });
             
             // If it's the current user, update their balance too
-            if (userId === userData.user极Id) {
+            if (userId === userData.userId) {
               userData.balance = newBalance;
               updateUI();
             }
@@ -1753,7 +1669,7 @@
         const userIndex = allUsers.findIndex(u => u.userId === userId);
         allUsers[userIndex].isBlocked = block;
         
-极        // Update in Firebase
+        // Update in Firebase
         await updateUserInAllUsers(userId, { isBlocked: block });
         
         // If blocking the current user, log them out
@@ -1782,9 +1698,9 @@
           return;
         }
         
-        const userItem = document.querySelector(`.view-details[极data-user="${userId}"]`).closest('.user-item');
+        const userItem = document.querySelector(`.view-details[data-user="${userId}"]`).closest('.user-item');
         
-        const detailsPanel = document.createElement("极div");
+        const detailsPanel = document.createElement("div");
         detailsPanel.className = "user-details-panel";
         detailsPanel.setAttribute("data-user", userId);
         
@@ -1806,9 +1722,9 @@
             ${user.country && flagUrl ? `<img src="${flagUrl}" class="flag-icon" alt="${user.country}"> ${user.country}` : 'N/A'}
           </div>
           <div>
-            <strong>Last Login:</strong> ${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'N极/A'}
+            <strong>Last Login:</strong> ${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'N/A'}
           </div>
-          <极div>
+          <div>
             <strong>Registration Date:</strong> ${user.registrationDate ? new Date(user.registrationDate).toLocaleString() : 'N/A'}
           </div>
           
@@ -1905,7 +1821,7 @@
           };
           
           if (!userData.activityLog) userData.activityLog = [];
-          userData.activity极Log.push(activity);
+          userData.activityLog.push(activity);
           
           // Update user in allUsers
           const userIndex = allUsers.findIndex(u => u.userId === userId);
@@ -1975,7 +1891,7 @@
         userData.activityLog.push(activity);
         
         // Update user in allUsers
-        const user极Index = allUsers.findIndex(u => u.userId === userId);
+        const userIndex = allUsers.findIndex(u => u.userId === userId);
         if (userIndex !== -1) {
           allUsers[userIndex].balance = userData.balance;
           if (!allUsers[userIndex].activityLog) allUsers[userIndex].activityLog = [];
