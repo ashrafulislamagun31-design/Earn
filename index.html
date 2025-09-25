@@ -1,201 +1,200 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Adexora Hub</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://adexora.com/cdn/ads.js?id=141"></script>
-<style>
-    * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: linear-gradient(135deg,#6a11cb 0%,#2575fc 100%); color:white; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:20px; }
-    .container { max-width:400px; width:100%; text-align:center; }
-    .header { margin-bottom:30px; padding:20px; background:rgba(255,255,255,0.1); border-radius:20px; backdrop-filter:blur(10px); box-shadow:0 8px 32px rgba(0,0,0,0.1); }
-    h1 { font-size:28px; margin-bottom:5px; text-shadow:0 2px 5px rgba(0,0,0,0.2); }
-    .developer { font-size:14px; opacity:0.8; margin-bottom:10px; }
-    .copyright { font-size:12px; opacity:0.6; margin-top:10px; }
-    .stats-container { display:flex; justify-content:space-around; margin:30px 0; }
-    .stat-box { background:rgba(255,255,255,0.15); padding:20px; border-radius:15px; width:45%; backdrop-filter:blur(5px); box-shadow:0 4px 15px rgba(0,0,0,0.1); }
-    .stat-title { font-size:14px; opacity:0.9; margin-bottom:10px; }
-    .stat-value { font-size:32px; font-weight:bold; }
-    .buttons-container { display:flex; flex-direction:column; gap:15px; margin-top:20px; }
-    .btn { padding:16px; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; transition:all 0.3s ease; box-shadow:0 4px 15px rgba(0,0,0,0.2); }
-    .btn-primary { background:#ff9d00; color:white; }
-    .btn-secondary { background:rgba(255,255,255,0.2); color:white; backdrop-filter:blur(5px); }
-    .btn:hover { transform:translateY(-3px); box-shadow:0 6px 20px rgba(0,0,0,0.25); }
-    .btn:active { transform:translateY(1px); }
-    .ad-container { margin-top:30px; padding:15px; background:rgba(0,0,0,0.2); border-radius:15px; display:none; }
-    .ad-title { margin-bottom:10px; font-size:18px; }
-    .ad-content { height:150px; background:rgba(255,255,255,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; }
-    .progress-container { width:100%; height:8px; background:rgba(255,255,255,0.2); border-radius:4px; margin-top:15px; overflow:hidden; }
-    .progress-bar { height:100%; background:#ff9d00; width:0%; transition:width 0.3s ease; }
-    .notification { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-100px); background:rgba(0,0,0,0.8); color:white; padding:15px 25px; border-radius:10px; z-index:1000; transition:transform 0.5s ease; }
-    .notification.show { transform:translateX(-50%) translateY(0); }
-    @media (max-width:480px) { .container{padding:10px;} h1{font-size:24px;} .stat-value{font-size:28px;} .btn{padding:14px; font-size:16px;} }
-</style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h1>Adexora Hub</h1>
-        <div class="developer">Developer By AK Apps Creator</div>
-        <div class="copyright">Ni Kajol</div>
-    </div>
-
-    <div class="stats-container">
-        <div class="stat-box">
-            <div class="stat-title">Watched Ads</div>
-            <div class="stat-value" id="watched-ads">0</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-title">Earned Points</div>
-            <div class="stat-value" id="earned-points">0</div>
-        </div>
-    </div>
-
-    <div class="buttons-container">
-        <button class="btn btn-primary" id="watch-ad-btn">WATCH AD</button>
-        <button class="btn btn-secondary" id="start-auto-btn">START AUTO ADS</button>
-        <button class="btn btn-secondary" id="stop-auto-btn">STOP AUTO ADS</button>
-    </div>
-
-    <div class="ad-container" id="ad-container">
-        <div class="ad-title">Advertisement</div>
-        <div class="ad-content" id="ad-content">Ad is loading...</div>
-        <div class="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
-    </div>
-</div>
-
-<div class="notification" id="notification">Points added successfully!</div>
-
-<script>
-const tg = window.Telegram.WebApp;
-tg.expand();
-tg.enableClosingConfirmation();
-
-// State
-let watchedAds = 0;
-let earnedPoints = 0;
-let autoAdsActive = false;
-let isAdPlaying = false;
-
-// DOM
-const watchedAdsEl = document.getElementById('watched-ads');
-const earnedPointsEl = document.getElementById('earned-points');
-const watchAdBtn = document.getElementById('watch-ad-btn');
-const startAutoBtn = document.getElementById('start-auto-btn');
-const stopAutoBtn = document.getElementById('stop-auto-btn');
-const adContainer = document.getElementById('ad-container');
-const adContent = document.getElementById('ad-content');
-const progressBar = document.getElementById('progress-bar');
-const notification = document.getElementById('notification');
-
-// Update UI
-function updateUI() {
-    watchedAdsEl.textContent = watchedAds;
-    earnedPointsEl.textContent = earnedPoints;
-}
-
-// Notification
-function showNotification(msg){
-    notification.textContent = msg;
-    notification.classList.add('show');
-    setTimeout(()=>{ notification.classList.remove('show'); },3000);
-}
-
-// 5-10-15 সেকেন্ড অ্যাড
-let adDurations = [5000,10000,15000];
-let adIndex = 0;
-
-function simulateAdWatch(){
-    return new Promise((resolve)=>{
-        isAdPlaying = true;
-        adContainer.style.display='block';
-        adContent.textContent = `Watch this ad for ${adDurations[adIndex]/1000} seconds...`;
-
-        let progress=0;
-        const totalDuration = adDurations[adIndex];
-        const intervalTime = 100;
-        const increment = (intervalTime / totalDuration)*100;
-
-        const interval = setInterval(()=>{
-            progress+=increment;
-            progressBar.style.width=`${progress}%`;
-            if(progress>=100){
-                clearInterval(interval);
-                setTimeout(()=>{
-                    adContainer.style.display='none';
-                    progressBar.style.width='0%';
-                    isAdPlaying=false;
-                    adIndex = (adIndex+1)%adDurations.length;
-                    resolve();
-                },500);
-            }
-        },intervalTime);
-    });
-}
-
-// Show Ad
-function showAd(){
-    return new Promise((resolve)=>{
-        if(isAdPlaying) return resolve();
-        simulateAdWatch().then(()=>{
-            if(typeof window.showAdexora !=='undefined'){
-                window.showAdexora().then(()=>{
-                    watchedAds++; earnedPoints+=10; updateUI();
-                    showNotification('+10 points earned!');
-                    resolve();
-                }).catch(()=>{
-                    showNotification('Ad failed. Please try again.');
-                    resolve();
-                });
-            } else {
-                watchedAds++; earnedPoints+=10; updateUI();
-                showNotification('+10 points earned!');
-                resolve();
-            }
-        });
-    });
-}
-
-// Auto Ads
-function startAutoAds(){
-    if(autoAdsActive) return;
-    autoAdsActive=true;
-    startAutoBtn.disabled=true;
-    stopAutoBtn.disabled=false;
-    showNotification('Auto ads started');
-    showNextAd();
-}
-
-function showNextAd(){
-    if(!autoAdsActive) return;
-    if(!isAdPlaying){
-        showAd().then(()=>{ setTimeout(showNextAd,1000); });
-    }
-}
-
-function stopAutoAds(){
-    autoAdsActive=false;
-    startAutoBtn.disabled=false;
-    stopAutoBtn.disabled=true;
-    showNotification('Auto ads stopped');
-}
-
-// Events
-watchAdBtn.addEventListener('click',showAd);
-startAutoBtn.addEventListener('click',startAutoAds);
-stopAutoBtn.addEventListener('click',stopAutoAds);
-
-// Init
-updateUI();
-stopAutoBtn.disabled=true;
-
-// Telegram back button
-tg.BackButton.onClick(()=>{ tg.close(); });
-tg.BackButton.show();
-</script>
-</body>
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Adexora Hub</title>  
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>  
+    <script src="https://adexora.com/cdn/ads.js?id=141"></script>  
+    <style>  
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }  
+        body { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }  
+        .container { max-width: 400px; width: 100%; text-align: center; }  
+        .header { margin-bottom: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 20px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }  
+        h1 { font-size: 28px; margin-bottom: 5px; text-shadow: 0 2px 5px rgba(0,0,0,0.2); }  
+        .developer { font-size: 14px; opacity: 0.8; margin-bottom: 10px; }  
+        .copyright { font-size: 12px; opacity: 0.6; margin-top: 10px; }  
+        .stats-container { display: flex; justify-content: space-around; margin: 30px 0; }  
+        .stat-box { background: rgba(255,255,255,0.15); padding: 20px; border-radius: 15px; width: 45%; backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }  
+        .stat-title { font-size: 14px; opacity: 0.9; margin-bottom: 10px; }  
+        .stat-value { font-size: 32px; font-weight: bold; }  
+        .buttons-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }  
+        .btn { padding: 16px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }  
+        .btn-primary { background: #ff9d00; color: white; }  
+        .btn-secondary { background: rgba(255,255,255,0.2); color: white; backdrop-filter: blur(5px); }  
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }  
+        .btn:active { transform: translateY(1px); }  
+        .ad-container { margin-top: 30px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 15px; display: none; }  
+        .ad-title { margin-bottom: 10px; font-size: 18px; }  
+        .ad-content { height: 150px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }  
+        .progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; margin-top: 15px; overflow: hidden; }  
+        .progress-bar { height: 100%; background: #ff9d00; width: 0%; transition: width 0.3s ease; }  
+        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 10px; z-index: 1000; transition: transform 0.5s ease; }  
+        .notification.show { transform: translateX(-50%) translateY(0); }  
+        @media (max-width: 480px) { .container { padding: 10px; } h1 { font-size: 24px; } .stat-value { font-size: 28px; } .btn { padding: 14px; font-size: 16px; } }  
+    </style>  
+</head>  
+<body>  
+    <div class="container">  
+        <div class="header">  
+            <h1>Adexora Hub</h1>  
+            <div class="developer">Developer By AK Apps Creator</div>  
+            <div class="copyright">Ni Kajol</div>  
+        </div>  
+          
+        <div class="stats-container">  
+            <div class="stat-box">  
+                <div class="stat-title">Watched Ads</div>  
+                <div class="stat-value" id="watched-ads">0</div>  
+            </div>  
+            <div class="stat-box">  
+                <div class="stat-title">Earned Points</div>  
+                <div class="stat-value" id="earned-points">0</div>  
+            </div>  
+        </div>  
+          
+        <div class="buttons-container">  
+            <button class="btn btn-primary" id="watch-ad-btn">WATCH AD</button>  
+            <button class="btn btn-secondary" id="start-auto-btn">START AUTO ADS</button>  
+            <button class="btn btn-secondary" id="stop-auto-btn">STOP AUTO ADS</button>  
+        </div>  
+          
+        <div class="ad-container" id="ad-container">  
+            <div class="ad-title">Advertisement</div>  
+            <div class="ad-content" id="ad-content">Ad is loading...</div>  
+            <div class="progress-container">  
+                <div class="progress-bar" id="progress-bar"></div>  
+            </div>  
+        </div>  
+    </div>  
+      
+    <div class="notification" id="notification">Points added successfully!</div>  
+  
+    <script>  
+        // Initialize Telegram Web App  
+        const tg = window.Telegram.WebApp;  
+        tg.expand();  
+        tg.enableClosingConfirmation();  
+          
+        // State variables  
+        let watchedAds = 0;  
+        let earnedPoints = 0;  
+        let autoAdsActive = false;  
+        let isAdPlaying = false;  
+          
+        // DOM elements  
+        const watchedAdsEl = document.getElementById('watched-ads');  
+        const earnedPointsEl = document.getElementById('earned-points');  
+        const watchAdBtn = document.getElementById('watch-ad-btn');  
+        const startAutoBtn = document.getElementById('start-auto-btn');  
+        const stopAutoBtn = document.getElementById('stop-auto-btn');  
+        const adContainer = document.getElementById('ad-container');  
+        const adContent = document.getElementById('ad-content');  
+        const progressBar = document.getElementById('progress-bar');  
+        const notification = document.getElementById('notification');  
+          
+        // Update UI with current values  
+        function updateUI() {  
+            watchedAdsEl.textContent = watchedAds;  
+            earnedPointsEl.textContent = earnedPoints;  
+        }  
+          
+        // Show notification  
+        function showNotification(message) {  
+            notification.textContent = message;  
+            notification.classList.add('show');  
+            setTimeout(() => { notification.classList.remove('show'); }, 3000);  
+        }  
+          
+        // Simulate ad watching with progress bar  
+        function simulateAdWatch() {  
+            return new Promise((resolve) => {  
+                isAdPlaying = true;  
+                adContainer.style.display = 'block';  
+                adContent.textContent = 'Watch this ad to earn points...';  
+                  
+                let progress = 0;  
+                const interval = setInterval(() => {  
+                    progress += 2;  
+                    progressBar.style.width = `${progress}%`;  
+                    if (progress >= 100) {  
+                        clearInterval(interval);  
+                        setTimeout(() => {  
+                            adContainer.style.display = 'none';  
+                            progressBar.style.width = '0%';  
+                            isAdPlaying = false;  
+                            resolve();  
+                        }, 500);  
+                    }  
+                }, 100);  
+            });  
+        }  
+          
+        // Show ad using Adexora  
+        function showAd() {  
+            return new Promise((resolve) => {  
+                if (isAdPlaying) return resolve();  
+                simulateAdWatch().then(() => {  
+                    if (typeof window.showAdexora !== 'undefined') {  
+                        window.showAdexora().then(() => {  
+                            watchedAds++;  
+                            earnedPoints += 10;  
+                            updateUI();  
+                            showNotification('+10 points earned!');  
+                            resolve();  
+                        }).catch(() => {  
+                            showNotification('Ad failed. Please try again.');  
+                            resolve();  
+                        });  
+                    } else {  
+                        watchedAds++;  
+                        earnedPoints += 10;  
+                        updateUI();  
+                        showNotification('+10 points earned!');  
+                        resolve();  
+                    }  
+                });  
+            });  
+        }  
+          
+        // Auto Ads functions  
+        function startAutoAds() {  
+            if (autoAdsActive) return;  
+            autoAdsActive = true;  
+            startAutoBtn.disabled = true;  
+            stopAutoBtn.disabled = false;  
+            showNotification('Auto ads started');  
+            showNextAd();  
+        }  
+          
+        function showNextAd() {  
+            if (!autoAdsActive) return;  
+            if (!isAdPlaying) {  
+                showAd().then(() => {  
+                    setTimeout(showNextAd, 1000); // ১ সেকেন্ড পরে পরের অ্যাড  
+                });  
+            }  
+        }  
+          
+        function stopAutoAds() {  
+            autoAdsActive = false;  
+            startAutoBtn.disabled = false;  
+            stopAutoBtn.disabled = true;  
+            showNotification('Auto ads stopped');  
+        }  
+          
+        // Event listeners  
+        watchAdBtn.addEventListener('click', showAd);  
+        startAutoBtn.addEventListener('click', startAutoAds);  
+        stopAutoBtn.addEventListener('click', stopAutoAds);  
+          
+        // Initialize UI  
+        updateUI();  
+        stopAutoBtn.disabled = true;  
+          
+        // Telegram back button  
+        tg.BackButton.onClick(() => { tg.close(); });  
+        tg.BackButton.show();  
+    </script>  
+</body>  
 </html>
