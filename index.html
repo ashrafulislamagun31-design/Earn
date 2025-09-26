@@ -59,6 +59,9 @@
     .ad-modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:3500}
     .ad-box{background:#fff;padding:20px;border-radius:12px;width:92%;max-width:360px;text-align:center}
     .small{font-size:13px;color:#666}
+    .ad-timer{font-size:16px;font-weight:bold;margin:10px 0;color:#6a11cb;}
+    .ad-click-area{background:#f5f5f5;padding:20px;border-radius:10px;margin:15px 0;cursor:pointer;border:2px dashed #ccc;transition:all 0.3s;}
+    .ad-click-area:hover{background:#e9e9e9;border-color:#6a11cb;}
   </style>
 </head>
 <body>
@@ -140,11 +143,23 @@
   <div class="ad-modal" id="adModal">
     <div class="ad-box">
       <h3>Advertisement</h3>
+      <div class="ad-timer" id="adTimer">Click the ad within: 10 seconds</div>
+      
+      <div class="ad-click-area" id="adClickArea">
+        <div style="font-size:24px;margin-bottom:10px">📱</div>
+        <div style="font-weight:bold;margin-bottom:5px">Special Offer!</div>
+        <div class="small">Click this ad to earn extra</div>
+        <div class="small" id="clickStatus">Wait for timer...</div>
+      </div>
+      
       <div style="margin:16px 0">
         <div style="width:48px;height:48px;border:4px solid #eee;border-top-color:#6a11cb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
       </div>
-      <div id="adStatus" class="small">Playing ad...</div>
-      <div style="margin-top:16px"><button id="adDoneBtn" class="btn btn-primary" style="display:none">OK</button></div>
+      <div id="adStatus" class="small">Ad is loading...</div>
+      <div style="margin-top:16px">
+        <button id="adCloseBtn" class="btn btn-secondary" style="display:none">Close</button>
+        <button id="adDoneBtn" class="btn btn-primary" style="display:none">OK, Continue</button>
+      </div>
     </div>
   </div>
 
@@ -183,6 +198,13 @@ let dailyLimit = 10;
 let userIP = "Unknown";
 let userCountry = "Unknown";
 
+// Ad click tracking variables
+let adClickWindowActive = false;
+let adClickStartTime = 0;
+let adClickTimer = null;
+let adClicked = false;
+let adClickCountdown = 10;
+
 /* ========== DOM refs ========== */
 const balanceEl = () => document.getElementById('balance');
 const perAdEl = () => document.getElementById('perAd');
@@ -204,11 +226,14 @@ const firebaseLoading = () => document.getElementById('firebaseLoading');
 const adModal = () => document.getElementById('adModal');
 const adStatus = () => document.getElementById('adStatus');
 const adDoneBtn = () => document.getElementById('adDoneBtn');
+const adCloseBtn = () => document.getElementById('adCloseBtn');
+const adTimer = () => document.getElementById('adTimer');
+const adClickArea = () => document.getElementById('adClickArea');
+const clickStatus = () => document.getElementById('clickStatus');
 
 /* ========== Utility functions ========== */
 function formatDateField(d){
   if(!d) return '';
-  // d may be Firestore Timestamp or string
   if (d && typeof d.toDate === 'function') {
     return d.toDate().toLocaleString();
   } else if (typeof d === 'string') {
@@ -228,64 +253,76 @@ function updateResetTimeUI(){
   resetTimeEl().textContent = `Resets in ${hrs}h ${mins}m`;
 }
 
-// Ad click simulation with 1-10 second window
-function simulateAdClickWithTimeWindow() {
-  return new Promise((resolve) => {
-    let clickWindowActive = false;
-    let clickWindowStartTime;
-    let clickTimeout;
-    let adClicked = false;
-
-    // Function to handle clicks
-    function handleAdClick() {
-      if (!clickWindowActive) return;
+/* ========== Ad Click Handler ========== */
+function handleAdClick() {
+  if (!adClickWindowActive) return;
+  
+  const currentTime = Date.now();
+  const timeSinceAdStart = currentTime - adClickStartTime;
+  
+  // Only count clicks between 1-10 seconds
+  if (timeSinceAdStart >= 1000 && timeSinceAdStart <= 10000) {
+    if (!adClicked) {
+      adClicked = true;
+      const seconds = Math.round(timeSinceAdStart/1000);
+      clickStatus().textContent = `✅ Clicked at ${seconds}s! +1 click`;
+      clickStatus().style.color = '#28a745';
+      clickStatus().style.fontWeight = 'bold';
       
-      const currentTime = Date.now();
-      const timeSinceAdStart = currentTime - clickWindowStartTime;
+      // Change ad area style to show success
+      adClickArea().style.background = '#d4edda';
+      adClickArea().style.borderColor = '#28a745';
+      adClickArea().style.borderStyle = 'solid';
       
-      // Only count clicks between 1-10 seconds
-      if (timeSinceAdStart >= 1000 && timeSinceAdStart <= 10000) {
-        if (!adClicked) {
-          adClicked = true;
-          adStatus().textContent = `Ad clicked! +1 click (${Math.round(timeSinceAdStart/1000)}s)`;
-          console.log(`Ad clicked at ${Math.round(timeSinceAdStart/1000)} seconds`);
-          
-          // Clear timeout since we got a click
-          if (clickTimeout) clearTimeout(clickTimeout);
-          
-          // Wait a moment then resolve
-          setTimeout(() => {
-            adModal().removeEventListener('click', handleAdClick);
-            resolve(adClicked);
-          }, 500);
-        }
-      } else if (timeSinceAdStart < 1000) {
-        adStatus().textContent = 'Wait a moment... Click too early!';
-      } else {
-        adStatus().textContent = 'Click time window expired!';
-      }
+      console.log(`Ad clicked at ${seconds} seconds`);
     }
+  } else if (timeSinceAdStart < 1000) {
+    clickStatus().textContent = '⏳ Too early! Wait a moment...';
+    clickStatus().style.color = '#ffc107';
+  } else {
+    clickStatus().textContent = '❌ Time window expired!';
+    clickStatus().style.color = '#dc3545';
+  }
+}
 
-    // Set up click listener
-    adModal().addEventListener('click', handleAdClick);
-
-    // Start the click window after a brief delay (simulating ad load)
-    setTimeout(() => {
-      clickWindowStartTime = Date.now();
-      clickWindowActive = true;
-      adStatus().textContent = 'Ad loaded! Click now (1-10 seconds)...';
+function startAdClickWindow() {
+  adClicked = false;
+  adClickWindowActive = true;
+  adClickStartTime = Date.now();
+  adClickCountdown = 10;
+  
+  // Reset ad area style
+  adClickArea().style.background = '#f5f5f5';
+  adClickArea().style.borderColor = '#ccc';
+  adClickArea().style.borderStyle = 'dashed';
+  clickStatus().textContent = 'Click now! (1-10 seconds)';
+  clickStatus().style.color = '#6a11cb';
+  
+  // Start countdown timer
+  adClickTimer = setInterval(() => {
+    adClickCountdown--;
+    adTimer().textContent = `Click the ad within: ${adClickCountdown} seconds`;
+    
+    if (adClickCountdown <= 0) {
+      clearInterval(adClickTimer);
+      adClickWindowActive = false;
+      adTimer().textContent = 'Time window closed!';
+      clickStatus().textContent = '⏰ Time expired! No click recorded.';
+      clickStatus().style.color = '#dc3545';
       
-      // Set timeout to end click window after 10 seconds
-      clickTimeout = setTimeout(() => {
-        clickWindowActive = false;
-        if (!adClicked) {
-          adStatus().textContent = 'Click window closed. No click recorded.';
-        }
-        adModal().removeEventListener('click', handleAdClick);
-        resolve(adClicked);
-      }, 10000);
-    }, 500); // Small delay to simulate ad loading
-  });
+      // Show buttons after timer ends
+      adDoneBtn().style.display = 'inline-flex';
+      adCloseBtn().style.display = 'inline-flex';
+    }
+  }, 1000);
+}
+
+function stopAdClickWindow() {
+  adClickWindowActive = false;
+  if (adClickTimer) {
+    clearInterval(adClickTimer);
+    adClickTimer = null;
+  }
 }
 
 /* ========== Load user IP & country (best-effort) ========== */
@@ -294,7 +331,6 @@ async function detectLocation(){
     const r = await fetch('https://api.ipify.org?format=json');
     const j = await r.json();
     userIP = j.ip || 'Unknown';
-    // ipapi for country code
     const r2 = await fetch(`https://ipapi.co/${userIP}/json/`);
     const j2 = await r2.json();
     userCountry = j2.country_code || 'Unknown';
@@ -310,9 +346,7 @@ async function loadUserFromServer(){
     const doc = await db.collection('users').doc(uid).get();
     if (doc.exists){
       const data = doc.data();
-      // Merge safely: keep local keys unless server overrides
       userData = { ...userData, ...data };
-      // If server has undefined for some, set defaults
       userData.balance = parseFloat(userData.balance || 0);
       userData.todayAdCount = userData.todayAdCount || 0;
       userData.todayAdClicks = userData.todayAdClicks || 0;
@@ -321,7 +355,6 @@ async function loadUserFromServer(){
       userData.activityLog = userData.activityLog || [];
       userData.lastAdReset = userData.lastAdReset || new Date().toDateString();
     } else {
-      // new user doc creation
       const today = new Date().toDateString();
       userData = {
         balance: 0,
@@ -417,7 +450,6 @@ function renderMethods(){
     div.className = 'method-card';
     div.dataset.method = m.name.toLowerCase();
     
-    // Method-specific logos
     const logos = {
       'bkash': '🏦',
       'nagad': '📱', 
@@ -456,7 +488,6 @@ function renderHistory(){
     div.className = 'history-item';
     const left = document.createElement('div');
     
-    // Format date as DD-MM-YYYY
     let formattedDate = 'Unknown';
     if (r.date) {
       const dateObj = typeof r.date.toDate === 'function' ? r.date.toDate() : new Date(r.date);
@@ -487,7 +518,6 @@ async function submitWithdrawRequest(){
   if (!number || isNaN(amount)) return showNotification('Fill all fields', false);
   if (amount < 20 || amount > 500) return showNotification('Amount must be between 20 and 500', false);
 
-  // Run Firestore transaction
   const userRef = db.collection('users').doc(uid);
   const reqsRef = db.collection('withdrawalRequests');
 
@@ -499,13 +529,11 @@ async function submitWithdrawRequest(){
       const serverBalance = parseFloat(serverUser.balance || 0);
       if (serverBalance < amount) throw new Error('INSUFFICIENT_BALANCE');
 
-      // Deduct balance
       tx.update(userRef, {
         balance: serverBalance - amount,
         lastUpdate: new Date().toISOString()
       });
 
-      // Create request doc with server timestamp
       const newReqRef = reqsRef.doc();
       tx.set(newReqRef, {
         userId: uid,
@@ -519,7 +547,6 @@ async function submitWithdrawRequest(){
       });
     });
 
-    // If transaction successful, update local state & UI (local optimistic update)
     userData.balance = (userData.balance || 0) - amount;
     userData.activityLog = userData.activityLog || [];
     userData.activityLog.push({
@@ -531,11 +558,9 @@ async function submitWithdrawRequest(){
       country: userCountry
     });
 
-    // Refresh server requests and UI to show the new request
     await loadWithdrawalRequests();
     renderUI();
 
-    // Reset form
     document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
     document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
     accountNumberInput().value = '';
@@ -543,9 +568,7 @@ async function submitWithdrawRequest(){
     withdrawFormEl().style.display = 'none';
 
     showNotification('Withdrawal request submitted');
-
-    // Save the updated local userData (merge) to server
-    saveUserToServer().catch(()=>{ /* already handled in saveUserToServer */ });
+    saveUserToServer().catch(()=>{ });
 
   } catch (err){
     console.error('Withdraw transaction error', err);
@@ -556,7 +579,6 @@ async function submitWithdrawRequest(){
 
 /* ========== Watch ad flow ========== */
 async function onAdEarn(){
-  // check daily limit & reset if needed
   const today = new Date().toDateString();
   if (userData.lastAdReset !== today){
     userData.lastAdReset = today;
@@ -568,33 +590,43 @@ async function onAdEarn(){
   }
 
   adModal().style.display = 'flex';
-  adStatus().textContent = 'Playing ad...';
+  adStatus().textContent = 'Ad is loading...';
   adDoneBtn().style.display = 'none';
+  adCloseBtn().style.display = 'none';
 
-  // If ad library available, use it. Otherwise fallback (simulate)
+  // Add click event listener to ad area
+  adClickArea().addEventListener('click', handleAdClick);
+
   const playAd = () => new Promise((resolve, reject) => {
     if (typeof window.showAdexora === 'function'){
       window.showAdexora().then(resolve).catch(reject);
     } else {
-      // simulate ad time
-      setTimeout(resolve, 1800);
+      setTimeout(resolve, 2000);
     }
   });
 
   try {
     await playAd();
 
-    // Simulate ad click with 1-10 second time window
-    const adClicked = await simulateAdClickWithTimeWindow();
-    
-    adStatus().textContent = adClicked ? 'Ad clicked! +1 click' : 'Ad finished (no click)';
-    adDoneBtn().style.display = 'inline-flex';
+    // Start the 10-second click window
+    adStatus().textContent = 'Ad loaded! Click the ad area within 10 seconds.';
+    startAdClickWindow();
 
-    // reward user
+    // Wait for the click window to complete
+    await new Promise(resolve => {
+      const checkCompletion = setInterval(() => {
+        if (!adClickWindowActive) {
+          clearInterval(checkCompletion);
+          resolve();
+        }
+      }, 100);
+    });
+
+    // Reward user
     userData.todayAdCount = (userData.todayAdCount || 0) + 1;
-    userData.balance = (parseFloat(userData.balance || 0) + parseFloat(perAdRate || 0)).toFixed(8) * 1; // ensure numeric
+    userData.balance = (parseFloat(userData.balance || 0) + parseFloat(perAdRate || 0)).toFixed(8) * 1;
 
-    // add ad history & activity
+    // Add ad history
     userData.adHistory = userData.adHistory || [];
     userData.activityLog = userData.activityLog || [];
     const rec = { date: new Date().toISOString(), amount: perAdRate, clicked: adClicked };
@@ -613,8 +645,7 @@ async function onAdEarn(){
       userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
       userData.adClickHistory = userData.adClickHistory || [];
       userData.adClickHistory.push({ 
-        date: new Date().toISOString(),
-        clickTime: new Date().toISOString()
+        date: new Date().toISOString()
       });
       userData.activityLog.push({ 
         type: 'ad_click', 
@@ -624,43 +655,49 @@ async function onAdEarn(){
       });
     }
 
-    // Save changes to server and refresh UI
+    // Save changes
     await saveUserToServer();
-    await loadWithdrawalRequests(); // keep history up-to-date
+    await loadWithdrawalRequests();
     renderUI();
-    showNotification('You earned ৳' + parseFloat(perAdRate).toFixed(2) + (adClicked ? ' +1 click' : ''));
+    
+    const message = 'You earned ৳' + parseFloat(perAdRate).toFixed(2) + (adClicked ? ' +1 click' : '');
+    showNotification(message);
+
   } catch (e){
     console.error('Ad play error', e);
     showNotification('Ad failed to play', false);
-    adModal().style.display = 'none';
+  } finally {
+    // Clean up
+    stopAdClickWindow();
+    adClickArea().removeEventListener('click', handleAdClick);
   }
 }
 
-adDoneBtn().addEventListener('click', ()=> { 
+// Button event listeners
+adDoneBtn().addEventListener('click', () => { 
+  adModal().style.display = 'none'; 
+});
+
+adCloseBtn().addEventListener('click', () => { 
   adModal().style.display = 'none'; 
 });
 
 /* ========== Boot sequence ========== */
 document.addEventListener('DOMContentLoaded', async () => {
-  // Telegram WebApp
   try {
     tg = window.Telegram.WebApp;
     if (tg) tg.expand();
-  } catch(e){ /* ignore */ }
+  } catch(e){ }
 
-  // show spinner
   firebaseLoading().style.display = 'flex';
 
-  // derive uid from Telegram if available
   try {
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id){
       uid = 'user_' + tg.initDataUnsafe.user.id;
-      // also attach username into userData
       userData.userId = uid;
       userData.name = tg.initDataUnsafe.user.first_name || '';
       userData.username = tg.initDataUnsafe.user.username || '';
     } else {
-      // fallback guest id
       uid = 'guest_' + (localStorage.getItem('guestId') || (Math.floor(Math.random()*90000)+10000));
       localStorage.setItem('guestId', uid);
       userData.userId = uid;
@@ -670,26 +707,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     userData.userId = uid;
   }
 
-  // detect location (best-effort)
   await detectLocation();
 
-  // load settings & user & requests
   await Promise.all([
     loadSettings(),
     loadUserFromServer(),
     loadWithdrawalRequests()
   ]);
 
-  // UI initial render
   renderUI();
 
-  // hook buttons
   watchAdBtn().addEventListener('click', onAdEarn);
   toggleWithdrawBtn().addEventListener('click', ()=> {
     withdrawFormEl().style.display = (withdrawFormEl().style.display === 'none' || withdrawFormEl().style.display === '') ? 'block' : 'none';
   });
 
-  // amounts grid click
   document.querySelectorAll('.amount-btn').forEach(b => {
     b.addEventListener('click', (ev)=>{
       document.querySelectorAll('.amount-btn').forEach(x=>x.classList.remove('selected'));
@@ -698,16 +730,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Withdraw submit
   submitWithdrawBtn().addEventListener('click', submitWithdrawRequest);
 
-  // periodic UI updates (reset time)
   setInterval(updateResetTimeUI, 60*1000);
 
-  // hide loading spinner
   firebaseLoading().style.display = 'none';
-
-  // set date
   document.getElementById('current-date').textContent = new Date().toDateString();
 });
 
