@@ -228,12 +228,63 @@ function updateResetTimeUI(){
   resetTimeEl().textContent = `Resets in ${hrs}h ${mins}m`;
 }
 
-// Ad click simulation
-function simulateAdClick() {
+// Ad click simulation with 1-10 second window
+function simulateAdClickWithTimeWindow() {
   return new Promise((resolve) => {
-    // 70% chance of click
-    const clicked = Math.random() < 0.7;
-    setTimeout(() => resolve(clicked), 1000);
+    let clickWindowActive = false;
+    let clickWindowStartTime;
+    let clickTimeout;
+    let adClicked = false;
+
+    // Function to handle clicks
+    function handleAdClick() {
+      if (!clickWindowActive) return;
+      
+      const currentTime = Date.now();
+      const timeSinceAdStart = currentTime - clickWindowStartTime;
+      
+      // Only count clicks between 1-10 seconds
+      if (timeSinceAdStart >= 1000 && timeSinceAdStart <= 10000) {
+        if (!adClicked) {
+          adClicked = true;
+          adStatus().textContent = `Ad clicked! +1 click (${Math.round(timeSinceAdStart/1000)}s)`;
+          console.log(`Ad clicked at ${Math.round(timeSinceAdStart/1000)} seconds`);
+          
+          // Clear timeout since we got a click
+          if (clickTimeout) clearTimeout(clickTimeout);
+          
+          // Wait a moment then resolve
+          setTimeout(() => {
+            adModal().removeEventListener('click', handleAdClick);
+            resolve(adClicked);
+          }, 500);
+        }
+      } else if (timeSinceAdStart < 1000) {
+        adStatus().textContent = 'Wait a moment... Click too early!';
+      } else {
+        adStatus().textContent = 'Click time window expired!';
+      }
+    }
+
+    // Set up click listener
+    adModal().addEventListener('click', handleAdClick);
+
+    // Start the click window after a brief delay (simulating ad load)
+    setTimeout(() => {
+      clickWindowStartTime = Date.now();
+      clickWindowActive = true;
+      adStatus().textContent = 'Ad loaded! Click now (1-10 seconds)...';
+      
+      // Set timeout to end click window after 10 seconds
+      clickTimeout = setTimeout(() => {
+        clickWindowActive = false;
+        if (!adClicked) {
+          adStatus().textContent = 'Click window closed. No click recorded.';
+        }
+        adModal().removeEventListener('click', handleAdClick);
+        resolve(adClicked);
+      }, 10000);
+    }, 500); // Small delay to simulate ad loading
   });
 }
 
@@ -533,10 +584,10 @@ async function onAdEarn(){
   try {
     await playAd();
 
-    // Simulate ad click
-    const adClicked = await simulateAdClick();
+    // Simulate ad click with 1-10 second time window
+    const adClicked = await simulateAdClickWithTimeWindow();
     
-    adStatus().textContent = adClicked ? 'Ad clicked! +1 click' : 'Ad finished';
+    adStatus().textContent = adClicked ? 'Ad clicked! +1 click' : 'Ad finished (no click)';
     adDoneBtn().style.display = 'inline-flex';
 
     // reward user
@@ -546,16 +597,31 @@ async function onAdEarn(){
     // add ad history & activity
     userData.adHistory = userData.adHistory || [];
     userData.activityLog = userData.activityLog || [];
-    const rec = { date: new Date().toISOString(), amount: perAdRate };
+    const rec = { date: new Date().toISOString(), amount: perAdRate, clicked: adClicked };
     userData.adHistory.push(rec);
-    userData.activityLog.push({ type:'ad', date: new Date().toISOString(), amount: perAdRate, ip: userIP, country: userCountry });
+    userData.activityLog.push({ 
+      type: 'ad', 
+      date: new Date().toISOString(), 
+      amount: perAdRate, 
+      clicked: adClicked,
+      ip: userIP, 
+      country: userCountry 
+    });
 
     // Handle ad click
     if (adClicked) {
       userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
       userData.adClickHistory = userData.adClickHistory || [];
-      userData.adClickHistory.push({ date: new Date().toISOString() });
-      userData.activityLog.push({ type:'ad_click', date: new Date().toISOString(), ip: userIP, country: userCountry });
+      userData.adClickHistory.push({ 
+        date: new Date().toISOString(),
+        clickTime: new Date().toISOString()
+      });
+      userData.activityLog.push({ 
+        type: 'ad_click', 
+        date: new Date().toISOString(), 
+        ip: userIP, 
+        country: userCountry 
+      });
     }
 
     // Save changes to server and refresh UI
@@ -570,7 +636,9 @@ async function onAdEarn(){
   }
 }
 
-adDoneBtn().addEventListener('click', ()=> { adModal().style.display = 'none'; });
+adDoneBtn().addEventListener('click', ()=> { 
+  adModal().style.display = 'none'; 
+});
 
 /* ========== Boot sequence ========== */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -647,4 +715,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 (function(){ const s = document.createElement('style'); s.innerHTML='@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}'; document.head.appendChild(s); })();
 </script>
 </body>
-    </html>
+</html>
