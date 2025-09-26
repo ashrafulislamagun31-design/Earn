@@ -1,200 +1,650 @@
-<!DOCTYPE html>  
-<html lang="en">  
-<head>  
-    <meta charset="UTF-8">  
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-    <title>Adexora Hub</title>  
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>  
-    <script src="https://adexora.com/cdn/ads.js?id=141"></script>  
-    <style>  
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }  
-        body { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }  
-        .container { max-width: 400px; width: 100%; text-align: center; }  
-        .header { margin-bottom: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 20px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }  
-        h1 { font-size: 28px; margin-bottom: 5px; text-shadow: 0 2px 5px rgba(0,0,0,0.2); }  
-        .developer { font-size: 14px; opacity: 0.8; margin-bottom: 10px; }  
-        .copyright { font-size: 12px; opacity: 0.6; margin-top: 10px; }  
-        .stats-container { display: flex; justify-content: space-around; margin: 30px 0; }  
-        .stat-box { background: rgba(255,255,255,0.15); padding: 20px; border-radius: 15px; width: 45%; backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }  
-        .stat-title { font-size: 14px; opacity: 0.9; margin-bottom: 10px; }  
-        .stat-value { font-size: 32px; font-weight: bold; }  
-        .buttons-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }  
-        .btn { padding: 16px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }  
-        .btn-primary { background: #ff9d00; color: white; }  
-        .btn-secondary { background: rgba(255,255,255,0.2); color: white; backdrop-filter: blur(5px); }  
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }  
-        .btn:active { transform: translateY(1px); }  
-        .ad-container { margin-top: 30px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 15px; display: none; }  
-        .ad-title { margin-bottom: 10px; font-size: 18px; }  
-        .ad-content { height: 150px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }  
-        .progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; margin-top: 15px; overflow: hidden; }  
-        .progress-bar { height: 100%; background: #ff9d00; width: 0%; transition: width 0.3s ease; }  
-        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 10px; z-index: 1000; transition: transform 0.5s ease; }  
-        .notification.show { transform: translateX(-50%) translateY(0); }  
-        @media (max-width: 480px) { .container { padding: 10px; } h1 { font-size: 24px; } .stat-value { font-size: 28px; } .btn { padding: 14px; font-size: 16px; } }  
-    </style>  
-</head>  
-<body>  
-    <div class="container">  
-        <div class="header">  
-            <h1>Adexora Hub</h1>  
-            <div class="developer">Developer By AK Apps Creator</div>  
-            <div class="copyright">Ni Kajol</div>  
-        </div>  
-          
-        <div class="stats-container">  
-            <div class="stat-box">  
-                <div class="stat-title">Watched Ads</div>  
-                <div class="stat-value" id="watched-ads">0</div>  
-            </div>  
-            <div class="stat-box">  
-                <div class="stat-title">Earned Points</div>  
-                <div class="stat-value" id="earned-points">0</div>  
-            </div>  
-        </div>  
-          
-        <div class="buttons-container">  
-            <button class="btn btn-primary" id="watch-ad-btn">WATCH AD</button>  
-            <button class="btn btn-secondary" id="start-auto-btn">START AUTO ADS</button>  
-            <button class="btn btn-secondary" id="stop-auto-btn">STOP AUTO ADS</button>  
-        </div>  
-          
-        <div class="ad-container" id="ad-container">  
-            <div class="ad-title">Advertisement</div>  
-            <div class="ad-content" id="ad-content">Ad is loading...</div>  
-            <div class="progress-container">  
-                <div class="progress-bar" id="progress-bar"></div>  
-            </div>  
-        </div>  
-    </div>  
-      
-    <div class="notification" id="notification">Points added successfully!</div>  
-  
-    <script>  
-        // Initialize Telegram Web App  
-        const tg = window.Telegram.WebApp;  
-        tg.expand();  
-        tg.enableClosingConfirmation();  
-          
-        // State variables  
-        let watchedAds = 0;  
-        let earnedPoints = 0;  
-        let autoAdsActive = false;  
-        let isAdPlaying = false;  
-          
-        // DOM elements  
-        const watchedAdsEl = document.getElementById('watched-ads');  
-        const earnedPointsEl = document.getElementById('earned-points');  
-        const watchAdBtn = document.getElementById('watch-ad-btn');  
-        const startAutoBtn = document.getElementById('start-auto-btn');  
-        const stopAutoBtn = document.getElementById('stop-auto-btn');  
-        const adContainer = document.getElementById('ad-container');  
-        const adContent = document.getElementById('ad-content');  
-        const progressBar = document.getElementById('progress-bar');  
-        const notification = document.getElementById('notification');  
-          
-        // Update UI with current values  
-        function updateUI() {  
-            watchedAdsEl.textContent = watchedAds;  
-            earnedPointsEl.textContent = earnedPoints;  
-        }  
-          
-        // Show notification  
-        function showNotification(message) {  
-            notification.textContent = message;  
-            notification.classList.add('show');  
-            setTimeout(() => { notification.classList.remove('show'); }, 3000);  
-        }  
-          
-        // Simulate ad watching with progress bar  
-        function simulateAdWatch() {  
-            return new Promise((resolve) => {  
-                isAdPlaying = true;  
-                adContainer.style.display = 'block';  
-                adContent.textContent = 'Watch this ad to earn points...';  
-                  
-                let progress = 0;  
-                const interval = setInterval(() => {  
-                    progress += 2;  
-                    progressBar.style.width = `${progress}%`;  
-                    if (progress >= 100) {  
-                        clearInterval(interval);  
-                        setTimeout(() => {  
-                            adContainer.style.display = 'none';  
-                            progressBar.style.width = '0%';  
-                            isAdPlaying = false;  
-                            resolve();  
-                        }, 500);  
-                    }  
-                }, 100);  
-            });  
-        }  
-          
-        // Show ad using Adexora  
-        function showAd() {  
-            return new Promise((resolve) => {  
-                if (isAdPlaying) return resolve();  
-                simulateAdWatch().then(() => {  
-                    if (typeof window.showAdexora !== 'undefined') {  
-                        window.showAdexora().then(() => {  
-                            watchedAds++;  
-                            earnedPoints += 10;  
-                            updateUI();  
-                            showNotification('+10 points earned!');  
-                            resolve();  
-                        }).catch(() => {  
-                            showNotification('Ad failed. Please try again.');  
-                            resolve();  
-                        });  
-                    } else {  
-                        watchedAds++;  
-                        earnedPoints += 10;  
-                        updateUI();  
-                        showNotification('+10 points earned!');  
-                        resolve();  
-                    }  
-                });  
-            });  
-        }  
-          
-        // Auto Ads functions  
-        function startAutoAds() {  
-            if (autoAdsActive) return;  
-            autoAdsActive = true;  
-            startAutoBtn.disabled = true;  
-            stopAutoBtn.disabled = false;  
-            showNotification('Auto ads started');  
-            showNextAd();  
-        }  
-          
-        function showNextAd() {  
-            if (!autoAdsActive) return;  
-            if (!isAdPlaying) {  
-                showAd().then(() => {  
-                    setTimeout(showNextAd, 1000); // ১ সেকেন্ড পরে পরের অ্যাড  
-                });  
-            }  
-        }  
-          
-        function stopAutoAds() {  
-            autoAdsActive = false;  
-            startAutoBtn.disabled = false;  
-            stopAutoBtn.disabled = true;  
-            showNotification('Auto ads stopped');  
-        }  
-          
-        // Event listeners  
-        watchAdBtn.addEventListener('click', showAd);  
-        startAutoBtn.addEventListener('click', startAutoAds);  
-        stopAutoBtn.addEventListener('click', stopAutoAds);  
-          
-        // Initialize UI  
-        updateUI();  
-        stopAutoBtn.disabled = true;  
-          
-        // Telegram back button  
-        tg.BackButton.onClick(() => { tg.close(); });  
-        tg.BackButton.show();  
-    </script>  
-</body>  
-</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Earn Now - User</title>
+
+  <!-- Telegram Web App -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Ad script (optional) -->
+  <script src="https://adexora.com/cdn/ads.js?id=141" defer></script>
+
+  <!-- Firebase (compat - works with older code patterns) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root{
+      --primary-gradient: linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);
+      --card-bg: rgba(255,255,255,0.95);
+      --glass-bg: rgba(255,255,255,0.12);
+      --text-dark: #222;
+      --accent: #6a11cb;
+      --success: #28a745;
+      --danger: #dc3545;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Segoe UI,Roboto,Arial;}
+    body{background:var(--primary-gradient);min-height:100vh;padding:20px;color:var(--text-dark);display:flex;justify-content:center;}
+    .app{width:100%;max-width:520px;background:var(--glass-bg);border-radius:16px;padding-bottom:30px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.08);}
+    header{background:linear-gradient(135deg,#2575fc 0%,#6a11cb 100%);color:#fff;padding:26px;text-align:center;}
+    header h1{font-size:22px;margin-bottom:6px;}
+    .balance-card{background:var(--card-bg);margin:18px auto;padding:18px;border-radius:12px;width:88%;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
+    .balance-amount{font-size:34px;color:var(--accent);font-weight:800;}
+    .content{padding:18px;}
+    .section{background:var(--card-bg);padding:18px;border-radius:12px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:700;}
+    .btn-primary{background:linear-gradient(90deg,#6a11cb,#2575fc);color:#fff;}
+    .btn-secondary{background:#fff;border:1px solid #e6e6e6;color:#333;}
+    .task-info{display:flex;justify-content:space-between;margin-top:10px;color:#666;font-size:13px;flex-wrap:wrap;}
+    .task-info > div {margin-right:10px;}
+    .task-progress{height:8px;background:#eee;border-radius:6px;margin-top:10px;overflow:hidden;}
+    .task-bar{height:100%;background:linear-gradient(90deg,#6a11cb,#2575fc);width:0%}
+    .withdrawal-form{margin-top:12px}
+    .method-cards{display:flex;gap:8px;flex-wrap:wrap}
+    .method-card{padding:10px;border-radius:10px;border:1px solid #e9e9e9;min-width:90px;text-align:center;cursor:pointer;background:#fff}
+    .method-card.selected{border-color:var(--accent);background:rgba(106,17,203,0.06)}
+    .amount-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+    .amount-btn{padding:10px;border-radius:8px;border:1px solid #eee;background:#fff;cursor:pointer;font-weight:700}
+    .amount-btn.selected{border-color:var(--accent);background:rgba(106,17,203,0.06)}
+    .input{width:100%;padding:12px;border-radius:10px;border:1px solid #e9e9e9;margin-top:8px}
+    .history-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:#fff;margin-bottom:8px;border:1px solid #f3f3f3}
+    .status-badge{padding:6px 10px;border-radius:18px;font-weight:700;font-size:12px}
+    .status-pending{background:#fff3cd;color:#856404}
+    .status-paid{background:#d4edda;color:#155724}
+    .status-rejected{background:#f8d7da;color:#721c24}
+    .notification{position:fixed;top:20px;right:20px;padding:12px 16px;border-radius:10px;color:#fff;display:none;z-index:3000}
+    .firebase-loading{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:4000}
+    .ad-modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:3500}
+    .ad-box{background:#fff;padding:20px;border-radius:12px;width:92%;max-width:360px;text-align:center}
+    .small{font-size:13px;color:#666}
+  </style>
+</head>
+<body>
+  <div class="firebase-loading" id="firebaseLoading">
+    <div style="text-align:center;color:white">
+      <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px"></div>
+      <div>Loading...</div>
+    </div>
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <div class="app" role="application">
+    <header>
+      <h1>Earn Now</h1>
+      <div class="balance-card">
+        <div class="small">Your Balance</div>
+        <div class="balance-amount">৳ <span id="balance">0.00</span></div>
+        <div class="small" id="current-date"></div>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="section">
+        <h3>Watch Ads & Earn</h3>
+        <div style="margin-top:12px">
+          <button id="watchAdBtn" class="btn btn-primary">👁️ Watch Ad & Earn ৳<span id="perAd">0.06</span></button>
+        </div>
+        <div class="task-info">
+          <div>Watched: <strong id="todayCount">0</strong>/<strong id="dailyLimit">10</strong></div>
+          <div>Clicks: <strong id="todayClicks">0</strong></div>
+          <div id="resetTime" class="small">Resets in 24h</div>
+        </div>
+        <div class="task-progress" aria-hidden="true"><div id="taskBar" class="task-bar"></div></div>
+      </div>
+
+      <div class="section">
+        <h3>Withdraw Money</h3>
+        <div style="margin-top:10px">
+          <button id="toggleWithdraw" class="btn btn-secondary">💸 Request Withdrawal</button>
+        </div>
+
+        <div id="withdrawForm" class="withdrawal-form" style="display:none">
+          <div style="margin-top:10px">
+            <div class="small">Select Method</div>
+            <div id="methodCards" class="method-cards" style="margin-top:8px"></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Account / Mobile Number</div>
+            <input id="accountNumber" class="input" placeholder="Enter number (e.g. 01XXXXXXXXX)">
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Select Amount</div>
+            <div class="amount-grid" id="amountGrid">
+              <button class="amount-btn" data-amount="20">৳20</button>
+              <button class="amount-btn" data-amount="50">৳50</button>
+              <button class="amount-btn" data-amount="100">৳100</button>
+              <button class="amount-btn" data-amount="200">৳200</button>
+              <button class="amount-btn" data-amount="300">৳300</button>
+              <button class="amount-btn" data-amount="500">৳500</button>
+            </div>
+            <input id="withdrawAmount" type="number" class="input" placeholder="Or enter custom amount (20 - 500)" min="20" max="500" style="margin-top:8px">
+          </div>
+
+          <div style="margin-top:14px">
+            <button id="submitWithdraw" class="btn btn-primary">✅ Submit Request</button>
+          </div>
+        </div>
+
+        <h4 style="margin-top:18px">Withdrawal History</h4>
+        <div id="historyList" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ad Modal -->
+  <div class="ad-modal" id="adModal">
+    <div class="ad-box">
+      <h3>Advertisement</h3>
+      <div style="margin:16px 0">
+        <div style="width:48px;height:48px;border:4px solid #eee;border-top-color:#6a11cb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+      </div>
+      <div id="adStatus" class="small">Playing ad...</div>
+      <div style="margin-top:16px"><button id="adDoneBtn" class="btn btn-primary" style="display:none">OK</button></div>
+    </div>
+  </div>
+
+<script>
+/* ========== Helpers ========== */
+function showNotification(msg, success=true, ms=2200){
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.style.background = success ? 'linear-gradient(90deg,#28a745,#1e7e34)' : 'linear-gradient(90deg,#dc3545,#bd2130)';
+  el.style.display = 'block';
+  setTimeout(()=> el.style.display = 'none', ms);
+}
+
+/* ========== Firebase init ========== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDp49URVg2ipSBuoEBGZyqWWyc29cxAleE",
+  authDomain: "easy-earn-af82c.firebaseapp.com",
+  projectId: "easy-earn-af82c",
+  storageBucket: "easy-earn-af82c.firebasestorage.app",
+  messagingSenderId: "572340074151",
+  appId: "1:572340074151:web:778d58946c1163427acd82",
+  measurementId: "G-3RFZSPZD9W"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const FieldValue = firebase.firestore.FieldValue;
+
+/* ========== App state ========== */
+let tg; // Telegram WebApp object
+let uid = null;
+let userData = { balance: 0, adHistory: [], adClickHistory: [], activityLog: [], todayAdCount: 0, todayAdClicks: 0, lastAdReset: new Date().toDateString() };
+let withdrawalMethods = [];
+let allRequests = [];
+let perAdRate = 0.06;
+let dailyLimit = 10;
+let userIP = "Unknown";
+let userCountry = "Unknown";
+
+/* ========== DOM refs ========== */
+const balanceEl = () => document.getElementById('balance');
+const perAdEl = () => document.getElementById('perAd');
+const todayCountEl = () => document.getElementById('todayCount');
+const todayClicksEl = () => document.getElementById('todayClicks');
+const dailyLimitEl = () => document.getElementById('dailyLimit');
+const taskBarEl = () => document.getElementById('taskBar');
+const resetTimeEl = () => document.getElementById('resetTime');
+const watchAdBtn = () => document.getElementById('watchAdBtn');
+const toggleWithdrawBtn = () => document.getElementById('toggleWithdraw');
+const withdrawFormEl = () => document.getElementById('withdrawForm');
+const methodCardsEl = () => document.getElementById('methodCards');
+const amountGridEl = () => document.getElementById('amountGrid');
+const withdrawAmountInput = () => document.getElementById('withdrawAmount');
+const accountNumberInput = () => document.getElementById('accountNumber');
+const submitWithdrawBtn = () => document.getElementById('submitWithdraw');
+const historyListEl = () => document.getElementById('historyList');
+const firebaseLoading = () => document.getElementById('firebaseLoading');
+const adModal = () => document.getElementById('adModal');
+const adStatus = () => document.getElementById('adStatus');
+const adDoneBtn = () => document.getElementById('adDoneBtn');
+
+/* ========== Utility functions ========== */
+function formatDateField(d){
+  if(!d) return '';
+  // d may be Firestore Timestamp or string
+  if (d && typeof d.toDate === 'function') {
+    return d.toDate().toLocaleString();
+  } else if (typeof d === 'string') {
+    try { return new Date(d).toLocaleString(); } catch(e){ return d; }
+  } else if (d instanceof Date) return d.toLocaleString();
+  return String(d);
+}
+
+function updateResetTimeUI(){
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate()+1);
+  tomorrow.setHours(0,0,0,0);
+  const diff = tomorrow - now;
+  const hrs = Math.floor(diff/(1000*60*60));
+  const mins = Math.floor((diff%(1000*60*60))/(1000*60));
+  resetTimeEl().textContent = `Resets in ${hrs}h ${mins}m`;
+}
+
+// Ad click simulation
+function simulateAdClick() {
+  return new Promise((resolve) => {
+    // 70% chance of click
+    const clicked = Math.random() < 0.7;
+    setTimeout(() => resolve(clicked), 1000);
+  });
+}
+
+/* ========== Load user IP & country (best-effort) ========== */
+async function detectLocation(){
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const j = await r.json();
+    userIP = j.ip || 'Unknown';
+    // ipapi for country code
+    const r2 = await fetch(`https://ipapi.co/${userIP}/json/`);
+    const j2 = await r2.json();
+    userCountry = j2.country_code || 'Unknown';
+  } catch(e){
+    console.warn('Location detect failed', e);
+    userIP = 'Unknown'; userCountry = 'Unknown';
+  }
+}
+
+/* ========== Load & Save from Firestore ========== */
+async function loadUserFromServer(){
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    if (doc.exists){
+      const data = doc.data();
+      // Merge safely: keep local keys unless server overrides
+      userData = { ...userData, ...data };
+      // If server has undefined for some, set defaults
+      userData.balance = parseFloat(userData.balance || 0);
+      userData.todayAdCount = userData.todayAdCount || 0;
+      userData.todayAdClicks = userData.todayAdClicks || 0;
+      userData.adHistory = userData.adHistory || [];
+      userData.adClickHistory = userData.adClickHistory || [];
+      userData.activityLog = userData.activityLog || [];
+      userData.lastAdReset = userData.lastAdReset || new Date().toDateString();
+    } else {
+      // new user doc creation
+      const today = new Date().toDateString();
+      userData = {
+        balance: 0,
+        adHistory: [],
+        adClickHistory: [],
+        activityLog: [],
+        todayAdCount: 0,
+        todayAdClicks: 0,
+        lastAdReset: today,
+        registrationDate: new Date().toISOString()
+      };
+      await db.collection('users').doc(uid).set(userData, { merge: true });
+    }
+  } catch (e){
+    console.error('loadUserFromServer error', e);
+    showNotification('Error loading user data', false);
+  }
+}
+
+async function loadWithdrawalRequests(){
+  try {
+    const snap = await db.collection('withdrawalRequests').orderBy('date','desc').get();
+    allRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e){
+    console.error('loadWithdrawalRequests error', e);
+  }
+}
+
+async function loadSettings(){
+  try {
+    const s = await db.collection('settings').doc('appSettings').get();
+    if (s.exists){
+      const v = s.data();
+      perAdRate = parseFloat(v.perAdRate || perAdRate);
+      dailyLimit = parseInt(v.dailyTaskLimit || dailyLimit);
+    }
+    const methodsDoc = await db.collection('settings').doc('withdrawalMethods').get();
+    if (methodsDoc.exists){
+      const vm = methodsDoc.data();
+      withdrawalMethods = vm.methods || [];
+    } else {
+      withdrawalMethods = [
+        { name: 'bKash', enabled: true },
+        { name: 'Nagad', enabled: true },
+        { name: 'Rocket', enabled: true },
+        { name: 'Banglalink', enabled: true },
+        { name: 'Grameenphone', enabled: true },
+        { name: 'Robi', enabled: true },
+        { name: 'Airtel', enabled: true }
+      ];
+    }
+  } catch(e){
+    console.warn('loadSettings error', e);
+  }
+}
+
+async function saveUserToServer(){
+  try {
+    await db.collection('users').doc(uid).set({
+      ...userData,
+      lastUpdate: new Date().toISOString()
+    }, { merge: true });
+  } catch(e){
+    console.error('saveUserToServer error', e);
+    showNotification('Error saving data', false);
+  }
+}
+
+/* ========== UI render functions ========== */
+function renderUI(){
+  balanceEl().textContent = (userData.balance || 0).toFixed(2);
+  perAdEl().textContent = perAdRate.toFixed(2);
+  todayCountEl().textContent = userData.todayAdCount || 0;
+  todayClicksEl().textContent = userData.todayAdClicks || 0;
+  dailyLimitEl().textContent = dailyLimit;
+  const pct = ((userData.todayAdCount || 0) / dailyLimit) * 100;
+  taskBarEl().style.width = `${Math.min(pct,100)}%`;
+  updateResetTimeUI();
+  renderMethods();
+  renderHistory();
+}
+
+function renderMethods(){
+  const container = methodCardsEl();
+  container.innerHTML = '';
+  const enabled = (withdrawalMethods || []).filter(m=>m.enabled);
+  if (enabled.length === 0){
+    container.innerHTML = '<div class="small">No methods available</div>';
+    return;
+  }
+  enabled.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'method-card';
+    div.dataset.method = m.name.toLowerCase();
+    
+    // Method-specific logos
+    const logos = {
+      'bkash': '🏦',
+      'nagad': '📱', 
+      'rocket': '🚀',
+      'banglalink': '📶',
+      'grameenphone': '📞',
+      'robi': '🔴',
+      'airtel': '🅰️'
+    };
+    
+    const logo = logos[m.name.toLowerCase()] || '💳';
+    
+    div.innerHTML = `
+      <div style="font-size:24px;margin-bottom:5px">${logo}</div>
+      <div style="font-weight:800">${m.name}</div>
+      <div class="small">Tap to select</div>
+    `;
+    div.addEventListener('click', ()=> {
+      document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
+      div.classList.add('selected');
+    });
+    container.appendChild(div);
+  });
+}
+
+function renderHistory(){
+  const container = historyListEl();
+  container.innerHTML = '';
+  const myReqs = (allRequests || []).filter(r => String(r.userId) === String(uid) || String(r.userId) === String(userData.userId));
+  if (myReqs.length === 0){
+    container.innerHTML = '<div class="small" style="padding:12px;text-align:center;color:#666">No withdrawal history</div>';
+    return;
+  }
+  myReqs.forEach(r=>{
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    const left = document.createElement('div');
+    
+    // Format date as DD-MM-YYYY
+    let formattedDate = 'Unknown';
+    if (r.date) {
+      const dateObj = typeof r.date.toDate === 'function' ? r.date.toDate() : new Date(r.date);
+      if (!isNaN(dateObj.getTime())) {
+        const day = dateObj.getDate();
+        const month = dateObj.getMonth() + 1;
+        const year = dateObj.getFullYear();
+        formattedDate = `${day}-${month}-${year}`;
+      }
+    }
+    
+    left.innerHTML = `<div style="font-weight:800">${(r.method||'--').toString()}</div><div class="small">${formattedDate}</div>`;
+    const right = document.createElement('div');
+    const statusClass = r.status === 'paid' ? 'status-paid' : (r.status === 'rejected' ? 'status-rejected' : 'status-pending');
+    right.innerHTML = `<div style="text-align:right">৳${(r.amount||0)}<div style="margin-top:6px"><span class="status-badge ${statusClass}">${r.status || 'pending'}</span></div></div>`;
+    div.appendChild(left); div.appendChild(right);
+    container.appendChild(div);
+  });
+}
+
+/* ========== Withdraw flow (transaction-safe) ========== */
+async function submitWithdrawRequest(){
+  const selected = document.querySelector('.method-card.selected');
+  if (!selected) return showNotification('Please select a withdrawal method', false);
+  const method = selected.dataset.method;
+  const number = accountNumberInput().value.trim();
+  let amount = parseFloat(withdrawAmountInput().value);
+  if (!number || isNaN(amount)) return showNotification('Fill all fields', false);
+  if (amount < 20 || amount > 500) return showNotification('Amount must be between 20 and 500', false);
+
+  // Run Firestore transaction
+  const userRef = db.collection('users').doc(uid);
+  const reqsRef = db.collection('withdrawalRequests');
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const userSnap = await tx.get(userRef);
+      if (!userSnap.exists) throw new Error('User not found');
+      const serverUser = userSnap.data();
+      const serverBalance = parseFloat(serverUser.balance || 0);
+      if (serverBalance < amount) throw new Error('INSUFFICIENT_BALANCE');
+
+      // Deduct balance
+      tx.update(userRef, {
+        balance: serverBalance - amount,
+        lastUpdate: new Date().toISOString()
+      });
+
+      // Create request doc with server timestamp
+      const newReqRef = reqsRef.doc();
+      tx.set(newReqRef, {
+        userId: uid,
+        method,
+        number,
+        amount,
+        status: 'pending',
+        date: FieldValue.serverTimestamp(),
+        ip: userIP,
+        country: userCountry
+      });
+    });
+
+    // If transaction successful, update local state & UI (local optimistic update)
+    userData.balance = (userData.balance || 0) - amount;
+    userData.activityLog = userData.activityLog || [];
+    userData.activityLog.push({
+      type: 'withdrawal',
+      date: new Date().toISOString(),
+      amount,
+      method,
+      ip: userIP,
+      country: userCountry
+    });
+
+    // Refresh server requests and UI to show the new request
+    await loadWithdrawalRequests();
+    renderUI();
+
+    // Reset form
+    document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
+    document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
+    accountNumberInput().value = '';
+    withdrawAmountInput().value = '';
+    withdrawFormEl().style.display = 'none';
+
+    showNotification('Withdrawal request submitted');
+
+    // Save the updated local userData (merge) to server
+    saveUserToServer().catch(()=>{ /* already handled in saveUserToServer */ });
+
+  } catch (err){
+    console.error('Withdraw transaction error', err);
+    if (err && err.message === 'INSUFFICIENT_BALANCE') showNotification('Insufficient balance', false);
+    else showNotification('Could not submit withdrawal', false);
+  }
+}
+
+/* ========== Watch ad flow ========== */
+async function onAdEarn(){
+  // check daily limit & reset if needed
+  const today = new Date().toDateString();
+  if (userData.lastAdReset !== today){
+    userData.lastAdReset = today;
+    userData.todayAdCount = 0;
+    userData.todayAdClicks = 0;
+  }
+  if ((userData.todayAdCount || 0) >= dailyLimit){
+    return showNotification('You reached daily ad limit', false);
+  }
+
+  adModal().style.display = 'flex';
+  adStatus().textContent = 'Playing ad...';
+  adDoneBtn().style.display = 'none';
+
+  // If ad library available, use it. Otherwise fallback (simulate)
+  const playAd = () => new Promise((resolve, reject) => {
+    if (typeof window.showAdexora === 'function'){
+      window.showAdexora().then(resolve).catch(reject);
+    } else {
+      // simulate ad time
+      setTimeout(resolve, 1800);
+    }
+  });
+
+  try {
+    await playAd();
+
+    // Simulate ad click
+    const adClicked = await simulateAdClick();
+    
+    adStatus().textContent = adClicked ? 'Ad clicked! +1 click' : 'Ad finished';
+    adDoneBtn().style.display = 'inline-flex';
+
+    // reward user
+    userData.todayAdCount = (userData.todayAdCount || 0) + 1;
+    userData.balance = (parseFloat(userData.balance || 0) + parseFloat(perAdRate || 0)).toFixed(8) * 1; // ensure numeric
+
+    // add ad history & activity
+    userData.adHistory = userData.adHistory || [];
+    userData.activityLog = userData.activityLog || [];
+    const rec = { date: new Date().toISOString(), amount: perAdRate };
+    userData.adHistory.push(rec);
+    userData.activityLog.push({ type:'ad', date: new Date().toISOString(), amount: perAdRate, ip: userIP, country: userCountry });
+
+    // Handle ad click
+    if (adClicked) {
+      userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
+      userData.adClickHistory = userData.adClickHistory || [];
+      userData.adClickHistory.push({ date: new Date().toISOString() });
+      userData.activityLog.push({ type:'ad_click', date: new Date().toISOString(), ip: userIP, country: userCountry });
+    }
+
+    // Save changes to server and refresh UI
+    await saveUserToServer();
+    await loadWithdrawalRequests(); // keep history up-to-date
+    renderUI();
+    showNotification('You earned ৳' + parseFloat(perAdRate).toFixed(2) + (adClicked ? ' +1 click' : ''));
+  } catch (e){
+    console.error('Ad play error', e);
+    showNotification('Ad failed to play', false);
+    adModal().style.display = 'none';
+  }
+}
+
+adDoneBtn().addEventListener('click', ()=> { adModal().style.display = 'none'; });
+
+/* ========== Boot sequence ========== */
+document.addEventListener('DOMContentLoaded', async () => {
+  // Telegram WebApp
+  try {
+    tg = window.Telegram.WebApp;
+    if (tg) tg.expand();
+  } catch(e){ /* ignore */ }
+
+  // show spinner
+  firebaseLoading().style.display = 'flex';
+
+  // derive uid from Telegram if available
+  try {
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id){
+      uid = 'user_' + tg.initDataUnsafe.user.id;
+      // also attach username into userData
+      userData.userId = uid;
+      userData.name = tg.initDataUnsafe.user.first_name || '';
+      userData.username = tg.initDataUnsafe.user.username || '';
+    } else {
+      // fallback guest id
+      uid = 'guest_' + (localStorage.getItem('guestId') || (Math.floor(Math.random()*90000)+10000));
+      localStorage.setItem('guestId', uid);
+      userData.userId = uid;
+    }
+  } catch(e){
+    uid = 'guest_' + Math.floor(Math.random()*999999);
+    userData.userId = uid;
+  }
+
+  // detect location (best-effort)
+  await detectLocation();
+
+  // load settings & user & requests
+  await Promise.all([
+    loadSettings(),
+    loadUserFromServer(),
+    loadWithdrawalRequests()
+  ]);
+
+  // UI initial render
+  renderUI();
+
+  // hook buttons
+  watchAdBtn().addEventListener('click', onAdEarn);
+  toggleWithdrawBtn().addEventListener('click', ()=> {
+    withdrawFormEl().style.display = (withdrawFormEl().style.display === 'none' || withdrawFormEl().style.display === '') ? 'block' : 'none';
+  });
+
+  // amounts grid click
+  document.querySelectorAll('.amount-btn').forEach(b => {
+    b.addEventListener('click', (ev)=>{
+      document.querySelectorAll('.amount-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      withdrawAmountInput().value = b.dataset.amount;
+    });
+  });
+
+  // Withdraw submit
+  submitWithdrawBtn().addEventListener('click', submitWithdrawRequest);
+
+  // periodic UI updates (reset time)
+  setInterval(updateResetTimeUI, 60*1000);
+
+  // hide loading spinner
+  firebaseLoading().style.display = 'none';
+
+  // set date
+  document.getElementById('current-date').textContent = new Date().toDateString();
+});
+
+/* ========== small animations ========== */
+(function(){ const s = document.createElement('style'); s.innerHTML='@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}'; document.head.appendChild(s); })();
+</script>
+</body>
+    </html>
