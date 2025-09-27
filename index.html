@@ -8,9 +8,6 @@
   <!-- Telegram Web App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- New Ad Script -->
-  <script async src="https://partner.adextra.io/jt/02550eb738a9bc745b2d1ca9865a18866fad3996.js"></script>
-
   <!-- Firebase (compat - works with older code patterns) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -83,12 +80,41 @@
     
     /* Animation for spin */
     @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    
+    /* Ad container styles */
+    .ad-container {
+      width: 100%;
+      min-height: 250px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      margin: 15px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed #ccc;
+    }
+    .ad-placeholder {
+      color: #666;
+      text-align: center;
+      padding: 20px;
+    }
+    .referral-link-container {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+    .referral-link {
+      flex: 1;
+      padding: 10px;
+      background: #f0f8ff;
+      border-radius: 8px;
+      border: 1px solid #d0e8ff;
+      font-size: 12px;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
-  <!-- New Ad Container -->
-  <div id="02550eb738a9bc745b2d1ca9865a18866fad3996"></div>
-
   <div class="firebase-loading" id="firebaseLoading">
     <div style="text-align:center;color:white">
       <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px"></div>
@@ -210,11 +236,16 @@
   <div class="ad-modal" id="adModal">
     <div class="ad-box">
       <h3>Advertisement</h3>
-      <div style="margin:16px 0">
-        <div style="width:48px;height:48px;border:4px solid #eee;border-top-color:#6a11cb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+      <div class="ad-container" id="adContainer">
+        <div class="ad-placeholder" id="adPlaceholder">
+          Loading advertisement...
+        </div>
       </div>
-      <div id="adStatus" class="small">Playing ad...</div>
-      <div style="margin-top:16px"><button id="adDoneBtn" class="btn btn-primary" style="display:none">OK</button></div>
+      <div id="adStatus" class="small">Please watch the ad for 15 seconds</div>
+      <div style="margin-top:16px">
+        <button id="adDoneBtn" class="btn btn-primary" style="display:none">Complete</button>
+        <button id="adCloseBtn" class="btn btn-secondary" style="display:none">Close</button>
+      </div>
     </div>
   </div>
 
@@ -258,7 +289,8 @@ let userData = {
   referralCode: '',
   referredBy: '',
   referrals: [],
-  referralEarnings: 0
+  referralEarnings: 0,
+  referralBonusGiven: false
 };
 let withdrawalMethods = [];
 let allRequests = [];
@@ -266,6 +298,9 @@ let perAdRate = 0.06;
 let dailyLimit = 10;
 let userIP = "Unknown";
 let userCountry = "Unknown";
+let adTimer = null;
+let adWatchTime = 0;
+let adCompleted = false;
 
 /* ========== DOM refs ========== */
 const balanceEl = () => document.getElementById('balance');
@@ -288,6 +323,9 @@ const firebaseLoading = () => document.getElementById('firebaseLoading');
 const adModal = () => document.getElementById('adModal');
 const adStatus = () => document.getElementById('adStatus');
 const adDoneBtn = () => document.getElementById('adDoneBtn');
+const adCloseBtn = () => document.getElementById('adCloseBtn');
+const adContainer = () => document.getElementById('adContainer');
+const adPlaceholder = () => document.getElementById('adPlaceholder');
 
 // New DOM refs for community and referral
 const joinChannelBtn = () => document.getElementById('joinChannelBtn');
@@ -377,6 +415,14 @@ async function loadUserFromServer(){
     if (doc.exists){
       const data = doc.data();
       
+      // Check if user was referred
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref');
+      if (refCode && !data.referredBy && !data.referralBonusGiven) {
+        // This is a new user coming from a referral link
+        userData.referredBy = refCode;
+      }
+      
       // ব্যালেন্স এবং পার্মানেন্ট ডেটা লোড করুন
       userData.balance = parseFloat(data.balance || 0);
       userData.totalEarned = parseFloat(data.totalEarned || 0);
@@ -389,9 +435,10 @@ async function loadUserFromServer(){
       
       // Referral data
       userData.referralCode = data.referralCode || generateReferralCode();
-      userData.referredBy = data.referredBy || '';
+      userData.referredBy = data.referredBy || userData.referredBy || '';
       userData.referrals = data.referrals || [];
       userData.referralEarnings = parseFloat(data.referralEarnings || 0);
+      userData.referralBonusGiven = data.referralBonusGiven || false;
       
       // ডেইলি কাউন্ট লোড করুন কিন্তু রিসেট চেক করুন
       userData.todayAdCount = parseInt(data.todayAdCount || 0);
@@ -418,9 +465,10 @@ async function loadUserFromServer(){
         registrationDate: new Date().toISOString(),
         userId: uid,
         referralCode: generateReferralCode(),
-        referredBy: '',
+        referredBy: userData.referredBy || '',
         referrals: [],
-        referralEarnings: 0
+        referralEarnings: 0,
+        referralBonusGiven: false
       };
       await db.collection('users').doc(uid).set(userData);
       console.log('New user created');
@@ -497,6 +545,42 @@ async function saveUserToServer(){
   } catch(e){
     console.error('saveUserToServer error', e);
     showNotification('Error saving data', false);
+  }
+}
+
+/* ========== Referral System Functions ========== */
+async function processReferralBonus() {
+  if (userData.referredBy && !userData.referralBonusGiven) {
+    try {
+      // Find the referrer by their referral code
+      const referrersSnapshot = await db.collection('users')
+        .where('referralCode', '==', userData.referredBy)
+        .get();
+      
+      if (!referrersSnapshot.empty) {
+        const referrerDoc = referrersSnapshot.docs[0];
+        const referrerData = referrerDoc.data();
+        
+        // Update referrer's data
+        await db.collection('users').doc(referrerDoc.id).update({
+          referralEarnings: parseFloat(referrerData.referralEarnings || 0) + 1,
+          balance: parseFloat(referrerData.balance || 0) + 1,
+          referrals: [...(referrerData.referrals || []), {
+            userId: uid,
+            date: new Date().toISOString(),
+            bonusGiven: true
+          }]
+        });
+        
+        // Mark that this user's referral bonus has been processed
+        userData.referralBonusGiven = true;
+        await saveUserToServer();
+        
+        console.log('Referral bonus processed for referrer:', referrerDoc.id);
+      }
+    } catch (error) {
+      console.error('Error processing referral bonus:', error);
+    }
   }
 }
 
@@ -609,14 +693,16 @@ function openSupportGroup() {
 
 function copyReferralCode() {
   const code = userData.referralCode;
+  const referralLink = `${window.location.origin}${window.location.pathname}?ref=${code}`;
+  
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(code).then(() => {
-      showNotification('Referral code copied to clipboard!');
+    navigator.clipboard.writeText(referralLink).then(() => {
+      showNotification('Referral link copied to clipboard!');
     }).catch(err => {
-      fallbackCopyText(code);
+      fallbackCopyText(referralLink);
     });
   } else {
-    fallbackCopyText(code);
+    fallbackCopyText(referralLink);
   }
 }
 
@@ -628,12 +714,169 @@ function fallbackCopyText(text) {
   textArea.select();
   try {
     document.execCommand('copy');
-    showNotification('Referral code copied to clipboard!');
+    showNotification('Referral link copied to clipboard!');
   } catch (err) {
     console.error('Fallback: Unable to copy', err);
-    showNotification('Failed to copy code. Please copy manually.', false);
+    showNotification('Failed to copy link. Please copy manually.', false);
   }
   document.body.removeChild(textArea);
+}
+
+/* ========== Ad System Functions ========== */
+function loadAdScript() {
+  return new Promise((resolve, reject) => {
+    // Check if script is already loaded
+    if (window.adScriptLoaded) {
+      resolve();
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = 'https://partner.adextra.io/jt/02550eb738a9bc745b2d1ca9865a18866fad3996.js';
+    script.async = true;
+    script.onload = () => {
+      window.adScriptLoaded = true;
+      resolve();
+    };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+function startAdTimer() {
+  adWatchTime = 0;
+  adCompleted = false;
+  
+  adTimer = setInterval(() => {
+    adWatchTime++;
+    adStatus().textContent = `Please watch the ad for 15 seconds (${adWatchTime}/15)`;
+    
+    if (adWatchTime >= 15) {
+      adCompleted = true;
+      clearInterval(adTimer);
+      adStatus().textContent = 'Ad completed! Click Complete to get your reward.';
+      adDoneBtn().style.display = 'inline-flex';
+      adCloseBtn().style.display = 'none';
+    }
+  }, 1000);
+}
+
+function stopAdTimer() {
+  if (adTimer) {
+    clearInterval(adTimer);
+    adTimer = null;
+  }
+}
+
+/* ========== Watch ad flow ========== */
+async function onAdEarn(){
+  // প্রথমে ডেইলি রিসেট চেক করুন
+  checkAndResetDailyCounts();
+  
+  const currentBalance = parseFloat(userData.balance || 0);
+  
+  if ((userData.todayAdCount || 0) >= dailyLimit){
+    return showNotification('You reached daily ad limit', false);
+  }
+
+  adModal().style.display = 'flex';
+  adStatus().textContent = 'Loading advertisement...';
+  adDoneBtn().style.display = 'none';
+  adCloseBtn().style.display = 'inline-flex';
+
+  try {
+    // Load ad script
+    await loadAdScript();
+    
+    // Simulate ad loading
+    adPlaceholder().innerHTML = `
+      <div style="margin-bottom:10px">Advertisement Content</div>
+      <div style="width:100%;height:180px;background:linear-gradient(45deg,#f0f0f0,#e0e0e0);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+        <div style="text-align:center">
+          <div style="font-size:24px">📱</div>
+          <div style="font-size:14px;margin-top:5px">Sample Ad Display</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#888">This is a simulated advertisement</div>
+    `;
+    
+    adStatus().textContent = 'Please watch the ad for 15 seconds (0/15)';
+    
+    // Start the timer
+    startAdTimer();
+    
+    // Set up event listeners for ad completion
+    adDoneBtn().onclick = async () => {
+      if (!adCompleted) {
+        showNotification('Please watch the ad for the full duration', false);
+        return;
+      }
+      
+      await completeAdWatch(currentBalance);
+    };
+    
+    adCloseBtn().onclick = () => {
+      stopAdTimer();
+      adModal().style.display = 'none';
+      showNotification('Ad watching cancelled', false);
+    };
+    
+  } catch (e) {
+    console.error('Ad loading error', e);
+    adStatus().textContent = 'Ad failed to load. Please try again.';
+    adDoneBtn().style.display = 'inline-flex';
+    adCloseBtn().style.display = 'none';
+    
+    adDoneBtn().onclick = async () => {
+      await completeAdWatch(currentBalance);
+    };
+  }
+}
+
+async function completeAdWatch(currentBalance) {
+  stopAdTimer();
+  adModal().style.display = 'none';
+  
+  const adClicked = await simulateAdClick();
+  
+  userData.todayAdCount = (userData.todayAdCount || 0) + 1;
+  userData.balance = currentBalance + parseFloat(perAdRate);
+  userData.totalEarned = parseFloat(userData.totalEarned || 0) + parseFloat(perAdRate);
+
+  userData.adHistory = userData.adHistory || [];
+  userData.activityLog = userData.activityLog || [];
+  
+  const rec = { date: new Date().toISOString(), amount: perAdRate };
+  userData.adHistory.push(rec);
+  userData.activityLog.push({
+    type: 'ad', 
+    date: new Date().toISOString(), 
+    amount: perAdRate, 
+    ip: userIP, 
+    country: userCountry 
+  });
+
+  if (adClicked) {
+    userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
+    userData.adClickHistory = userData.adClickHistory || [];
+    userData.adClickHistory.push({ date: new Date().toISOString() });
+    userData.activityLog.push({
+      type: 'ad_click', 
+      date: new Date().toISOString(), 
+      ip: userIP, 
+      country: userCountry 
+    });
+  }
+
+  // Process referral bonus if this is the first ad
+  if (userData.adHistory.length === 1 && userData.referredBy && !userData.referralBonusGiven) {
+    await processReferralBonus();
+  }
+
+  await saveUserToServer();
+  await loadWithdrawalRequests();
+  renderUI();
+  showNotification('You earned ৳' + parseFloat(perAdRate).toFixed(2) + (adClicked ? ' +1 click' : ''));
 }
 
 /* ========== Withdraw flow ========== */
@@ -744,78 +987,6 @@ async function submitWithdrawRequest(){
   }
 }
 
-/* ========== Watch ad flow ========== */
-async function onAdEarn(){
-  // প্রথমে ডেইলি রিসেট চেক করুন
-  checkAndResetDailyCounts();
-  
-  const currentBalance = parseFloat(userData.balance || 0);
-  
-  if ((userData.todayAdCount || 0) >= dailyLimit){
-    return showNotification('You reached daily ad limit', false);
-  }
-
-  adModal().style.display = 'flex';
-  adStatus().textContent = 'Playing ad...';
-  adDoneBtn().style.display = 'none';
-
-  // নতুন ad script ব্যবহার করুন
-  const playAd = () => new Promise((resolve, reject) => {
-    // নতুন ad script এর জন্য ad display logic
-    // Adextra ad script সাধারণত স্বয়ংক্রিয়ভাবে কাজ করে
-    // আমরা একটি timeout ব্যবহার করবো ad display এর জন্য
-    setTimeout(resolve, 3000); // 3 seconds for ad display
-  });
-
-  try {
-    await playAd();
-    const adClicked = await simulateAdClick();
-    
-    adStatus().textContent = adClicked ? 'Ad clicked! +1 click' : 'Ad finished';
-    adDoneBtn().style.display = 'inline-flex';
-
-    userData.todayAdCount = (userData.todayAdCount || 0) + 1;
-    userData.balance = currentBalance + parseFloat(perAdRate);
-    userData.totalEarned = parseFloat(userData.totalEarned || 0) + parseFloat(perAdRate);
-
-    userData.adHistory = userData.adHistory || [];
-    userData.activityLog = userData.activityLog || [];
-    
-    const rec = { date: new Date().toISOString(), amount: perAdRate };
-    userData.adHistory.push(rec);
-    userData.activityLog.push({
-      type: 'ad', 
-      date: new Date().toISOString(), 
-      amount: perAdRate, 
-      ip: userIP, 
-      country: userCountry 
-    });
-
-    if (adClicked) {
-      userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
-      userData.adClickHistory = userData.adClickHistory || [];
-      userData.adClickHistory.push({ date: new Date().toISOString() });
-      userData.activityLog.push({
-        type: 'ad_click', 
-        date: new Date().toISOString(), 
-        ip: userIP, 
-        country: userCountry 
-      });
-    }
-
-    await saveUserToServer();
-    await loadWithdrawalRequests();
-    renderUI();
-    showNotification('You earned ৳' + parseFloat(perAdRate).toFixed(2) + (adClicked ? ' +1 click' : ''));
-  } catch (e){
-    console.error('Ad play error', e);
-    showNotification('Ad failed to play', false);
-    adModal().style.display = 'none';
-  }
-}
-
-adDoneBtn().addEventListener('click', ()=> { adModal().style.display = 'none'; });
-
 /* ========== Boot sequence ========== */
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -885,4 +1056,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 </body>
-</html>
+  </html>
