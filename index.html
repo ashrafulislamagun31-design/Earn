@@ -8,9 +8,6 @@
   <!-- Telegram Web App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Adexora Ad Script -->
-  <script src="https://adexora.com/cdn/ads.js?id=141"></script>
-
   <!-- Firebase (compat - works with older code patterns) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -59,8 +56,9 @@
     .ad-modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:3500}
     .ad-box{background:#fff;padding:20px;border-radius:12px;width:92%;max-width:360px;text-align:center}
     .small{font-size:13px;color:#666}
-    .ad-container{width:100%;height:250px;background:#f5f5f5;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:15px 0;}
+    .ad-container{width:100%;height:250px;background:#f5f5f5;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:15px 0;overflow:hidden;}
     .ad-placeholder{color:#666;font-size:16px;}
+    .ad-frame{width:100%;height:100%;border:none;}
   </style>
 </head>
 <body>
@@ -144,10 +142,11 @@
       <h3>Advertisement</h3>
       <div class="ad-container" id="adContainer">
         <div class="ad-placeholder" id="adPlaceholder">Loading advertisement...</div>
+        <iframe id="adFrame" class="ad-frame" style="display:none"></iframe>
       </div>
-      <div id="adStatus" class="small">Please watch the ad completely</div>
+      <div id="adStatus" class="small">Please watch the ad completely to earn reward</div>
       <div style="margin-top:16px">
-        <button id="adCloseBtn" class="btn btn-secondary" style="display:none">Close</button>
+        <button id="adCloseBtn" class="btn btn-secondary">Close</button>
         <button id="adDoneBtn" class="btn btn-primary" style="display:none">I Watched Complete Ad</button>
       </div>
     </div>
@@ -200,6 +199,7 @@ let userCountry = "Unknown";
 let adWatchStartTime = null;
 let adWatchTimer = null;
 let adCompleted = false;
+let adClicked = false;
 
 /* ========== DOM refs ========== */
 const balanceEl = () => document.getElementById('balance');
@@ -225,6 +225,7 @@ const adDoneBtn = () => document.getElementById('adDoneBtn');
 const adCloseBtn = () => document.getElementById('adCloseBtn');
 const adContainer = () => document.getElementById('adContainer');
 const adPlaceholder = () => document.getElementById('adPlaceholder');
+const adFrame = () => document.getElementById('adFrame');
 
 /* ========== Utility functions ========== */
 function formatDateField(d){
@@ -248,80 +249,49 @@ function updateResetTimeUI(){
   resetTimeEl().textContent = `Resets in ${hrs}h ${mins}m`;
 }
 
-/* ========== Adexora Ad Integration ========== */
-function loadAdexoraAd() {
+/* ========== Simple Ad System (Adexora Alternative) ========== */
+function loadAd() {
   return new Promise((resolve, reject) => {
-    // Check if Adexora is available
-    if (typeof window.showAdexora === 'function') {
-      try {
-        // Clear previous ad container
-        adContainer().innerHTML = '';
-        adPlaceholder().style.display = 'block';
+    try {
+      // Clear previous ad
+      adFrame().style.display = 'none';
+      adPlaceholder().style.display = 'block';
+      adPlaceholder().textContent = 'Loading advertisement...';
+      
+      // Simulate ad loading delay
+      setTimeout(() => {
+        // Use a simple iframe with a mock ad or redirect to Adexora
+        const adUrls = [
+          'https://ads.example.com/ad1', // Replace with actual ad URLs
+          'https://ads.example.com/ad2',
+          'https://google.com', // Fallback
+          'https://youtube.com'
+        ];
         
-        // Show Adexora ad
-        window.showAdexora({
-          container: adContainer(),
-          onLoad: function() {
-            console.log('Adexora ad loaded successfully');
-            adPlaceholder().style.display = 'none';
-            adStatus().textContent = 'Ad loaded. Please watch...';
-            adWatchStartTime = Date.now();
-            startAdTimer();
-          },
-          onClick: function() {
-            console.log('Adexora ad clicked');
-            // Track click in user data
-            userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
-            userData.adClickHistory = userData.adClickHistory || [];
-            userData.adClickHistory.push({ 
-              date: new Date().toISOString(), 
-              adNetwork: 'Adexora',
-              ip: userIP, 
-              country: userCountry 
-            });
-            
-            userData.activityLog.push({
-              type: 'ad_click', 
-              date: new Date().toISOString(), 
-              adNetwork: 'Adexora',
-              ip: userIP, 
-              country: userCountry 
-            });
-            
-            showNotification('Ad clicked! +1 click counted');
-          },
-          onClose: function() {
-            console.log('Adexora ad closed');
-            clearTimeout(adWatchTimer);
-            const watchTime = Date.now() - adWatchStartTime;
-            
-            if (watchTime >= 15000) { // Minimum 15 seconds watch time
-              adCompleted = true;
-              adStatus().textContent = 'Ad completed! Click Done to claim reward.';
-              adDoneBtn().style.display = 'inline-flex';
-              adCloseBtn().style.display = 'none';
-            } else {
-              adStatus().textContent = 'Ad not watched completely. Please watch full ad.';
-              adCloseBtn().style.display = 'inline-flex';
-              adDoneBtn().style.display = 'none';
-            }
-          },
-          onError: function(error) {
-            console.error('Adexora ad error:', error);
-            reject(new Error('Ad failed to load: ' + error));
-          }
+        const randomAd = adUrls[Math.floor(Math.random() * adUrls.length)];
+        
+        adFrame().src = randomAd;
+        adFrame().style.display = 'block';
+        adPlaceholder().style.display = 'none';
+        
+        adStatus().textContent = 'Ad loaded. Please watch for 15 seconds...';
+        adWatchStartTime = Date.now();
+        startAdTimer();
+        
+        // Track ad view
+        userData.activityLog.push({
+          type: 'ad_view', 
+          date: new Date().toISOString(), 
+          adNetwork: 'Internal',
+          ip: userIP, 
+          country: userCountry 
         });
         
-        // If ad shows successfully
-        setTimeout(() => {
-          adStatus().textContent = 'Ad is loading...';
-        }, 1000);
-        
-      } catch (error) {
-        reject(error);
-      }
-    } else {
-      reject(new Error('Adexora ad network not available'));
+        resolve();
+      }, 2000);
+      
+    } catch (error) {
+      reject(error);
     }
   });
 }
@@ -334,11 +304,59 @@ function startAdTimer() {
     
     if (seconds >= 15) {
       clearInterval(adWatchTimer);
-      adStatus().textContent = 'Ad completed! You can close the ad.';
       adCompleted = true;
+      adStatus().textContent = 'Ad completed! Click "I Watched Complete Ad" to claim reward.';
+      adDoneBtn().style.display = 'inline-flex';
     }
   }, 1000);
 }
+
+// Track clicks on the ad frame
+adFrame().addEventListener('load', function() {
+  // Add click tracking to the iframe content
+  try {
+    adFrame().contentWindow.document.addEventListener('click', function() {
+      if (!adClicked) {
+        adClicked = true;
+        userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
+        userData.adClickHistory = userData.adClickHistory || [];
+        userData.adClickHistory.push({ 
+          date: new Date().toISOString(), 
+          adNetwork: 'Internal',
+          ip: userIP, 
+          country: userCountry 
+        });
+        
+        userData.activityLog.push({
+          type: 'ad_click', 
+          date: new Date().toISOString(), 
+          adNetwork: 'Internal',
+          ip: userIP, 
+          country: userCountry 
+        });
+        
+        showNotification('Ad clicked! +1 click counted');
+      }
+    });
+  } catch (e) {
+    // Cross-origin restriction, use alternative method
+    adFrame().contentWindow.addEventListener('click', function() {
+      if (!adClicked) {
+        adClicked = true;
+        userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
+        userData.adClickHistory = userData.adClickHistory || [];
+        userData.adClickHistory.push({ 
+          date: new Date().toISOString(), 
+          adNetwork: 'Internal',
+          ip: userIP, 
+          country: userCountry 
+        });
+        
+        showNotification('Ad clicked! +1 click counted');
+      }
+    });
+  }
+});
 
 /* ========== Daily Reset Logic ========== */
 function checkAndResetDailyCounts() {
@@ -346,12 +364,10 @@ function checkAndResetDailyCounts() {
   if (userData.lastAdReset !== today) {
     console.log('Resetting daily counts for new day');
     
-    // শুধু ডেইলি কাউন্ট রিসেট করুন, ব্যালেন্স নয়
     userData.lastAdReset = today;
     userData.todayAdCount = 0;
     userData.todayAdClicks = 0;
     
-    // সার্ভারে সেভ করুন
     saveUserToServer().catch(e => console.error('Reset save error:', e));
     return true;
   }
@@ -364,9 +380,6 @@ async function detectLocation(){
     const r = await fetch('https://api.ipify.org?format=json');
     const j = await r.json();
     userIP = j.ip || 'Unknown';
-    const r2 = await fetch(`https://ipapi.co/${userIP}/json/`);
-    const j2 = await r2.json();
-    userCountry = j2.country_code || 'Unknown';
   } catch(e){
     console.warn('Location detect failed', e);
     userIP = 'Unknown'; userCountry = 'Unknown';
@@ -380,7 +393,6 @@ async function loadUserFromServer(){
     if (doc.exists){
       const data = doc.data();
       
-      // ব্যালেন্স এবং পার্মানেন্ট ডেটা লোড করুন
       userData.balance = parseFloat(data.balance || 0);
       userData.totalEarned = parseFloat(data.totalEarned || 0);
       userData.totalWithdrawn = parseFloat(data.totalWithdrawn || 0);
@@ -390,17 +402,14 @@ async function loadUserFromServer(){
       userData.registrationDate = data.registrationDate || new Date().toISOString();
       userData.userId = data.userId || uid;
       
-      // ডেইলি কাউন্ট লোড করুন কিন্তু রিসেট চেক করুন
       userData.todayAdCount = parseInt(data.todayAdCount || 0);
       userData.todayAdClicks = parseInt(data.todayAdClicks || 0);
       userData.lastAdReset = data.lastAdReset || new Date().toDateString();
       
-      // ডেইলি রিসেট চেক করুন
       checkAndResetDailyCounts();
       
       console.log('User data loaded - Balance:', userData.balance, 'Today Count:', userData.todayAdCount);
     } else {
-      // নতুন ইউজার তৈরি করুন
       const today = new Date().toDateString();
       userData = {
         balance: 0,
@@ -477,7 +486,6 @@ async function saveUserToServer(){
 
 /* ========== UI render functions ========== */
 function renderUI(){
-  // ডেইলি রিসেট চেক করুন
   checkAndResetDailyCounts();
   
   const balance = parseFloat(userData.balance || 0);
@@ -640,7 +648,6 @@ async function submitWithdrawRequest(){
 
 /* ========== Watch ad flow ========== */
 async function onAdEarn(){
-  // প্রথমে ডেইলি রিসেট চেক করুন
   checkAndResetDailyCounts();
   
   const currentBalance = parseFloat(userData.balance || 0);
@@ -651,26 +658,20 @@ async function onAdEarn(){
 
   // Reset ad state
   adCompleted = false;
+  adClicked = false;
   adWatchStartTime = null;
   if (adWatchTimer) clearTimeout(adWatchTimer);
 
   adModal().style.display = 'flex';
   adStatus().textContent = 'Loading advertisement...';
   adDoneBtn().style.display = 'none';
-  adCloseBtn().style.display = 'none';
 
   try {
-    // Load Adexora ad
-    await loadAdexoraAd();
-    
-    // Show close button for user to close ad manually
-    adCloseBtn().style.display = 'inline-flex';
-    
+    await loadAd();
   } catch (error) {
     console.error('Ad load error:', error);
     adStatus().textContent = 'Ad failed to load. Please try again.';
-    adCloseBtn().style.display = 'inline-flex';
-    showNotification('Ad network error', false);
+    showNotification('Ad loading error', false);
   }
 }
 
@@ -695,15 +696,16 @@ adDoneBtn().addEventListener('click', async ()=> {
   const rec = { 
     date: new Date().toISOString(), 
     amount: perAdRate,
-    adNetwork: 'Adexora',
-    watchTime: Date.now() - adWatchStartTime
+    adNetwork: 'Internal',
+    watchTime: Date.now() - adWatchStartTime,
+    clicked: adClicked
   };
   userData.adHistory.push(rec);
   userData.activityLog.push({
     type: 'ad', 
     date: new Date().toISOString(), 
     amount: perAdRate, 
-    adNetwork: 'Adexora',
+    adNetwork: 'Internal',
     ip: userIP, 
     country: userCountry 
   });
@@ -714,13 +716,19 @@ adDoneBtn().addEventListener('click', async ()=> {
   renderUI();
   
   adModal().style.display = 'none';
-  showNotification('You earned ৳' + parseFloat(perAdRate).toFixed(2));
+  
+  let message = 'You earned ৳' + parseFloat(perAdRate).toFixed(2);
+  if (adClicked) {
+    message += ' +1 click counted';
+  }
+  showNotification(message);
 });
 
 // Handle ad close
 adCloseBtn().addEventListener('click', ()=> { 
   adModal().style.display = 'none';
   if (adWatchTimer) clearTimeout(adWatchTimer);
+  adFrame().src = 'about:blank'; // Clear the iframe
 });
 
 /* ========== Boot sequence ========== */
