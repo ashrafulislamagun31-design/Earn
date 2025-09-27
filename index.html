@@ -8,8 +8,8 @@
   <!-- Telegram Web App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Ad script (optional) -->
-  <script src="https://adexora.com/cdn/ads.js?id=141" defer></script>
+  <!-- New Ad Script -->
+  <script async src="https://partner.adextra.io/jt/02550eb738a9bc745b2d1ca9865a18866fad3996.js"></script>
 
   <!-- Firebase (compat - works with older code patterns) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -86,6 +86,9 @@
   </style>
 </head>
 <body>
+  <!-- New Ad Container -->
+  <div id="02550eb738a9bc745b2d1ca9865a18866fad3996"></div>
+
   <div class="firebase-loading" id="firebaseLoading">
     <div style="text-align:center;color:white">
       <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px"></div>
@@ -756,12 +759,12 @@ async function onAdEarn(){
   adStatus().textContent = 'Playing ad...';
   adDoneBtn().style.display = 'none';
 
+  // নতুন ad script ব্যবহার করুন
   const playAd = () => new Promise((resolve, reject) => {
-    if (typeof window.showAdexora === 'function'){
-      window.showAdexora().then(resolve).catch(reject);
-    } else {
-      setTimeout(resolve, 1800);
-    }
+    // নতুন ad script এর জন্য ad display logic
+    // Adextra ad script সাধারণত স্বয়ংক্রিয়ভাবে কাজ করে
+    // আমরা একটি timeout ব্যবহার করবো ad display এর জন্য
+    setTimeout(resolve, 3000); // 3 seconds for ad display
   });
 
   try {
