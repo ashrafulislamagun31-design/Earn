@@ -8,8 +8,8 @@
   <!-- Telegram Web App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Ad script (optional) -->
-  <script src="https://adexora.com/cdn/ads.js?id=141" defer></script>
+  <!-- Adexora Ad Script -->
+  <script src="https://adexora.com/cdn/ads.js?id=141"></script>
 
   <!-- Firebase (compat - works with older code patterns) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -59,6 +59,8 @@
     .ad-modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:3500}
     .ad-box{background:#fff;padding:20px;border-radius:12px;width:92%;max-width:360px;text-align:center}
     .small{font-size:13px;color:#666}
+    .ad-container{width:100%;height:250px;background:#f5f5f5;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:15px 0;}
+    .ad-placeholder{color:#666;font-size:16px;}
   </style>
 </head>
 <body>
@@ -140,11 +142,14 @@
   <div class="ad-modal" id="adModal">
     <div class="ad-box">
       <h3>Advertisement</h3>
-      <div style="margin:16px 0">
-        <div style="width:48px;height:48px;border:4px solid #eee;border-top-color:#6a11cb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
+      <div class="ad-container" id="adContainer">
+        <div class="ad-placeholder" id="adPlaceholder">Loading advertisement...</div>
       </div>
-      <div id="adStatus" class="small">Playing ad...</div>
-      <div style="margin-top:16px"><button id="adDoneBtn" class="btn btn-primary" style="display:none">OK</button></div>
+      <div id="adStatus" class="small">Please watch the ad completely</div>
+      <div style="margin-top:16px">
+        <button id="adCloseBtn" class="btn btn-secondary" style="display:none">Close</button>
+        <button id="adDoneBtn" class="btn btn-primary" style="display:none">I Watched Complete Ad</button>
+      </div>
     </div>
   </div>
 
@@ -175,13 +180,26 @@ const FieldValue = firebase.firestore.FieldValue;
 /* ========== App state ========== */
 let tg; // Telegram WebApp object
 let uid = null;
-let userData = { balance: 0, adHistory: [], adClickHistory: [], activityLog: [], todayAdCount: 0, todayAdClicks: 0, lastAdReset: new Date().toDateString() };
+let userData = { 
+  balance: 0, 
+  adHistory: [], 
+  adClickHistory: [], 
+  activityLog: [], 
+  todayAdCount: 0, 
+  todayAdClicks: 0, 
+  lastAdReset: new Date().toDateString(),
+  totalEarned: 0,
+  totalWithdrawn: 0
+};
 let withdrawalMethods = [];
 let allRequests = [];
 let perAdRate = 0.06;
 let dailyLimit = 10;
 let userIP = "Unknown";
 let userCountry = "Unknown";
+let adWatchStartTime = null;
+let adWatchTimer = null;
+let adCompleted = false;
 
 /* ========== DOM refs ========== */
 const balanceEl = () => document.getElementById('balance');
@@ -204,11 +222,13 @@ const firebaseLoading = () => document.getElementById('firebaseLoading');
 const adModal = () => document.getElementById('adModal');
 const adStatus = () => document.getElementById('adStatus');
 const adDoneBtn = () => document.getElementById('adDoneBtn');
+const adCloseBtn = () => document.getElementById('adCloseBtn');
+const adContainer = () => document.getElementById('adContainer');
+const adPlaceholder = () => document.getElementById('adPlaceholder');
 
 /* ========== Utility functions ========== */
 function formatDateField(d){
   if(!d) return '';
-  // d may be Firestore Timestamp or string
   if (d && typeof d.toDate === 'function') {
     return d.toDate().toLocaleString();
   } else if (typeof d === 'string') {
@@ -228,22 +248,122 @@ function updateResetTimeUI(){
   resetTimeEl().textContent = `Resets in ${hrs}h ${mins}m`;
 }
 
-// Ad click simulation
-function simulateAdClick() {
-  return new Promise((resolve) => {
-    // 70% chance of click
-    const clicked = Math.random() < 0.7;
-    setTimeout(() => resolve(clicked), 1000);
+/* ========== Adexora Ad Integration ========== */
+function loadAdexoraAd() {
+  return new Promise((resolve, reject) => {
+    // Check if Adexora is available
+    if (typeof window.showAdexora === 'function') {
+      try {
+        // Clear previous ad container
+        adContainer().innerHTML = '';
+        adPlaceholder().style.display = 'block';
+        
+        // Show Adexora ad
+        window.showAdexora({
+          container: adContainer(),
+          onLoad: function() {
+            console.log('Adexora ad loaded successfully');
+            adPlaceholder().style.display = 'none';
+            adStatus().textContent = 'Ad loaded. Please watch...';
+            adWatchStartTime = Date.now();
+            startAdTimer();
+          },
+          onClick: function() {
+            console.log('Adexora ad clicked');
+            // Track click in user data
+            userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
+            userData.adClickHistory = userData.adClickHistory || [];
+            userData.adClickHistory.push({ 
+              date: new Date().toISOString(), 
+              adNetwork: 'Adexora',
+              ip: userIP, 
+              country: userCountry 
+            });
+            
+            userData.activityLog.push({
+              type: 'ad_click', 
+              date: new Date().toISOString(), 
+              adNetwork: 'Adexora',
+              ip: userIP, 
+              country: userCountry 
+            });
+            
+            showNotification('Ad clicked! +1 click counted');
+          },
+          onClose: function() {
+            console.log('Adexora ad closed');
+            clearTimeout(adWatchTimer);
+            const watchTime = Date.now() - adWatchStartTime;
+            
+            if (watchTime >= 15000) { // Minimum 15 seconds watch time
+              adCompleted = true;
+              adStatus().textContent = 'Ad completed! Click Done to claim reward.';
+              adDoneBtn().style.display = 'inline-flex';
+              adCloseBtn().style.display = 'none';
+            } else {
+              adStatus().textContent = 'Ad not watched completely. Please watch full ad.';
+              adCloseBtn().style.display = 'inline-flex';
+              adDoneBtn().style.display = 'none';
+            }
+          },
+          onError: function(error) {
+            console.error('Adexora ad error:', error);
+            reject(new Error('Ad failed to load: ' + error));
+          }
+        });
+        
+        // If ad shows successfully
+        setTimeout(() => {
+          adStatus().textContent = 'Ad is loading...';
+        }, 1000);
+        
+      } catch (error) {
+        reject(error);
+      }
+    } else {
+      reject(new Error('Adexora ad network not available'));
+    }
   });
 }
 
-/* ========== Load user IP & country (best-effort) ========== */
+function startAdTimer() {
+  let seconds = 0;
+  adWatchTimer = setInterval(() => {
+    seconds++;
+    adStatus().textContent = `Watching ad... ${seconds}s/15s`;
+    
+    if (seconds >= 15) {
+      clearInterval(adWatchTimer);
+      adStatus().textContent = 'Ad completed! You can close the ad.';
+      adCompleted = true;
+    }
+  }, 1000);
+}
+
+/* ========== Daily Reset Logic ========== */
+function checkAndResetDailyCounts() {
+  const today = new Date().toDateString();
+  if (userData.lastAdReset !== today) {
+    console.log('Resetting daily counts for new day');
+    
+    // শুধু ডেইলি কাউন্ট রিসেট করুন, ব্যালেন্স নয়
+    userData.lastAdReset = today;
+    userData.todayAdCount = 0;
+    userData.todayAdClicks = 0;
+    
+    // সার্ভারে সেভ করুন
+    saveUserToServer().catch(e => console.error('Reset save error:', e));
+    return true;
+  }
+  return false;
+}
+
+/* ========== Load user IP & country ========== */
 async function detectLocation(){
   try {
     const r = await fetch('https://api.ipify.org?format=json');
     const j = await r.json();
     userIP = j.ip || 'Unknown';
-    // ipapi for country code
     const r2 = await fetch(`https://ipapi.co/${userIP}/json/`);
     const j2 = await r2.json();
     userCountry = j2.country_code || 'Unknown';
@@ -260,23 +380,32 @@ async function loadUserFromServer(){
     if (doc.exists){
       const data = doc.data();
       
-      // ব্যালেন্স সঠিকভাবে parse করা নিশ্চিত করুন
+      // ব্যালেন্স এবং পার্মানেন্ট ডেটা লোড করুন
       userData.balance = parseFloat(data.balance || 0);
-      userData.todayAdCount = parseInt(data.todayAdCount || 0);
-      userData.todayAdClicks = parseInt(data.todayAdClicks || 0);
+      userData.totalEarned = parseFloat(data.totalEarned || 0);
+      userData.totalWithdrawn = parseFloat(data.totalWithdrawn || 0);
       userData.adHistory = data.adHistory || [];
       userData.adClickHistory = data.adClickHistory || [];
       userData.activityLog = data.activityLog || [];
-      userData.lastAdReset = data.lastAdReset || new Date().toDateString();
       userData.registrationDate = data.registrationDate || new Date().toISOString();
       userData.userId = data.userId || uid;
       
-      console.log('User data loaded - Balance:', userData.balance); // ডিবাগিং
+      // ডেইলি কাউন্ট লোড করুন কিন্তু রিসেট চেক করুন
+      userData.todayAdCount = parseInt(data.todayAdCount || 0);
+      userData.todayAdClicks = parseInt(data.todayAdClicks || 0);
+      userData.lastAdReset = data.lastAdReset || new Date().toDateString();
+      
+      // ডেইলি রিসেট চেক করুন
+      checkAndResetDailyCounts();
+      
+      console.log('User data loaded - Balance:', userData.balance, 'Today Count:', userData.todayAdCount);
     } else {
       // নতুন ইউজার তৈরি করুন
       const today = new Date().toDateString();
       userData = {
         balance: 0,
+        totalEarned: 0,
+        totalWithdrawn: 0,
         adHistory: [],
         adClickHistory: [],
         activityLog: [],
@@ -287,12 +416,11 @@ async function loadUserFromServer(){
         userId: uid
       };
       await db.collection('users').doc(uid).set(userData);
-      console.log('New user created with balance 0');
+      console.log('New user created');
     }
   } catch (e){
     console.error('loadUserFromServer error', e);
     showNotification('Error loading user data', false);
-    // এরর হলে ডিফল্ট ভ্যালু সেট করুন
     userData.balance = 0;
   }
 }
@@ -340,7 +468,7 @@ async function saveUserToServer(){
       ...userData,
       lastUpdate: new Date().toISOString()
     }, { merge: true });
-    console.log('User data saved - Balance:', userData.balance); // ডিবাগিং
+    console.log('User data saved - Balance:', userData.balance, 'Today Count:', userData.todayAdCount);
   } catch(e){
     console.error('saveUserToServer error', e);
     showNotification('Error saving data', false);
@@ -349,7 +477,9 @@ async function saveUserToServer(){
 
 /* ========== UI render functions ========== */
 function renderUI(){
-  // ব্যালেন্স সঠিকভাবে ফরম্যাট করুন
+  // ডেইলি রিসেট চেক করুন
+  checkAndResetDailyCounts();
+  
   const balance = parseFloat(userData.balance || 0);
   balanceEl().textContent = balance.toFixed(2);
   
@@ -363,8 +493,6 @@ function renderUI(){
   updateResetTimeUI();
   renderMethods();
   renderHistory();
-  
-  console.log('UI rendered with balance:', balance); // ডিবাগিং
 }
 
 function renderMethods(){
@@ -380,7 +508,6 @@ function renderMethods(){
     div.className = 'method-card';
     div.dataset.method = m.name.toLowerCase();
     
-    // Method-specific logos
     const logos = {
       'bkash': '🏦',
       'nagad': '📱', 
@@ -419,7 +546,6 @@ function renderHistory(){
     div.className = 'history-item';
     const left = document.createElement('div');
     
-    // Format date as DD-MM-YYYY
     let formattedDate = 'Unknown';
     if (r.date) {
       const dateObj = typeof r.date.toDate === 'function' ? r.date.toDate() : new Date(r.date);
@@ -440,7 +566,7 @@ function renderHistory(){
   });
 }
 
-/* ========== Withdraw flow (transaction-safe) ========== */
+/* ========== Withdraw flow ========== */
 async function submitWithdrawRequest(){
   const selected = document.querySelector('.method-card.selected');
   if (!selected) return showNotification('Please select a withdrawal method', false);
@@ -450,7 +576,6 @@ async function submitWithdrawRequest(){
   if (!number || isNaN(amount)) return showNotification('Fill all fields', false);
   if (amount < 20 || amount > 500) return showNotification('Amount must be between 20 and 500', false);
 
-  // Run Firestore transaction
   const userRef = db.collection('users').doc(uid);
   const reqsRef = db.collection('withdrawalRequests');
 
@@ -462,13 +587,12 @@ async function submitWithdrawRequest(){
       const serverBalance = parseFloat(serverUser.balance || 0);
       if (serverBalance < amount) throw new Error('INSUFFICIENT_BALANCE');
 
-      // Deduct balance
       tx.update(userRef, {
         balance: serverBalance - amount,
+        totalWithdrawn: parseFloat(serverUser.totalWithdrawn || 0) + amount,
         lastUpdate: new Date().toISOString()
       });
 
-      // Create request doc with server timestamp
       const newReqRef = reqsRef.doc();
       tx.set(newReqRef, {
         userId: uid,
@@ -482,8 +606,9 @@ async function submitWithdrawRequest(){
       });
     });
 
-    // If transaction successful, update local state & UI (local optimistic update)
     userData.balance = parseFloat(userData.balance || 0) - amount;
+    userData.totalWithdrawn = parseFloat(userData.totalWithdrawn || 0) + amount;
+    
     userData.activityLog = userData.activityLog || [];
     userData.activityLog.push({
       type: 'withdrawal',
@@ -494,11 +619,9 @@ async function submitWithdrawRequest(){
       country: userCountry
     });
 
-    // Refresh server requests and UI to show the new request
     await loadWithdrawalRequests();
     renderUI();
 
-    // Reset form
     document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
     document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
     accountNumberInput().value = '';
@@ -506,9 +629,7 @@ async function submitWithdrawRequest(){
     withdrawFormEl().style.display = 'none';
 
     showNotification('Withdrawal request submitted');
-
-    // Save the updated local userData (merge) to server
-    saveUserToServer().catch(()=>{ /* already handled in saveUserToServer */ });
+    saveUserToServer().catch(()=>{});
 
   } catch (err){
     console.error('Withdraw transaction error', err);
@@ -519,96 +640,98 @@ async function submitWithdrawRequest(){
 
 /* ========== Watch ad flow ========== */
 async function onAdEarn(){
-  // প্রথমে ব্যালেন্স আপডেট করুন
+  // প্রথমে ডেইলি রিসেট চেক করুন
+  checkAndResetDailyCounts();
+  
   const currentBalance = parseFloat(userData.balance || 0);
   
-  // check daily limit & reset if needed
-  const today = new Date().toDateString();
-  if (userData.lastAdReset !== today){
-    userData.lastAdReset = today;
-    userData.todayAdCount = 0;
-    userData.todayAdClicks = 0;
-  }
   if ((userData.todayAdCount || 0) >= dailyLimit){
     return showNotification('You reached daily ad limit', false);
   }
 
-  adModal().style.display = 'flex';
-  adStatus().textContent = 'Playing ad...';
-  adDoneBtn().style.display = 'none';
+  // Reset ad state
+  adCompleted = false;
+  adWatchStartTime = null;
+  if (adWatchTimer) clearTimeout(adWatchTimer);
 
-  const playAd = () => new Promise((resolve, reject) => {
-    if (typeof window.showAdexora === 'function'){
-      window.showAdexora().then(resolve).catch(reject);
-    } else {
-      setTimeout(resolve, 1800);
-    }
-  });
+  adModal().style.display = 'flex';
+  adStatus().textContent = 'Loading advertisement...';
+  adDoneBtn().style.display = 'none';
+  adCloseBtn().style.display = 'none';
 
   try {
-    await playAd();
-    const adClicked = await simulateAdClick();
+    // Load Adexora ad
+    await loadAdexoraAd();
     
-    adStatus().textContent = adClicked ? 'Ad clicked! +1 click' : 'Ad finished';
-    adDoneBtn().style.display = 'inline-flex';
-
-    // ব্যালেন্স সঠিকভাবে আপডেট করুন
-    userData.todayAdCount = (userData.todayAdCount || 0) + 1;
-    userData.balance = currentBalance + parseFloat(perAdRate);
-
-    // add ad history & activity
-    userData.adHistory = userData.adHistory || [];
-    userData.activityLog = userData.activityLog || [];
+    // Show close button for user to close ad manually
+    adCloseBtn().style.display = 'inline-flex';
     
-    const rec = { date: new Date().toISOString(), amount: perAdRate };
-    userData.adHistory.push(rec);
-    userData.activityLog.push({
-      type: 'ad', 
-      date: new Date().toISOString(), 
-      amount: perAdRate, 
-      ip: userIP, 
-      country: userCountry 
-    });
-
-    // Handle ad click
-    if (adClicked) {
-      userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
-      userData.adClickHistory = userData.adClickHistory || [];
-      userData.adClickHistory.push({ date: new Date().toISOString() });
-      userData.activityLog.push({
-        type: 'ad_click', 
-        date: new Date().toISOString(), 
-        ip: userIP, 
-        country: userCountry 
-      });
-    }
-
-    // Save changes to server and refresh UI
-    await saveUserToServer();
-    await loadWithdrawalRequests();
-    renderUI();
-    showNotification('You earned ৳' + parseFloat(perAdRate).toFixed(2) + (adClicked ? ' +1 click' : ''));
-  } catch (e){
-    console.error('Ad play error', e);
-    showNotification('Ad failed to play', false);
-    adModal().style.display = 'none';
+  } catch (error) {
+    console.error('Ad load error:', error);
+    adStatus().textContent = 'Ad failed to load. Please try again.';
+    adCloseBtn().style.display = 'inline-flex';
+    showNotification('Ad network error', false);
   }
 }
 
-adDoneBtn().addEventListener('click', ()=> { adModal().style.display = 'none'; });
+// Handle ad completion
+adDoneBtn().addEventListener('click', async ()=> { 
+  if (!adCompleted) {
+    showNotification('Please watch the ad completely', false);
+    return;
+  }
+
+  const currentBalance = parseFloat(userData.balance || 0);
+  
+  // Reward user for completed ad
+  userData.todayAdCount = (userData.todayAdCount || 0) + 1;
+  userData.balance = currentBalance + parseFloat(perAdRate);
+  userData.totalEarned = parseFloat(userData.totalEarned || 0) + parseFloat(perAdRate);
+
+  // Add ad history
+  userData.adHistory = userData.adHistory || [];
+  userData.activityLog = userData.activityLog || [];
+  
+  const rec = { 
+    date: new Date().toISOString(), 
+    amount: perAdRate,
+    adNetwork: 'Adexora',
+    watchTime: Date.now() - adWatchStartTime
+  };
+  userData.adHistory.push(rec);
+  userData.activityLog.push({
+    type: 'ad', 
+    date: new Date().toISOString(), 
+    amount: perAdRate, 
+    adNetwork: 'Adexora',
+    ip: userIP, 
+    country: userCountry 
+  });
+
+  // Save and update UI
+  await saveUserToServer();
+  await loadWithdrawalRequests();
+  renderUI();
+  
+  adModal().style.display = 'none';
+  showNotification('You earned ৳' + parseFloat(perAdRate).toFixed(2));
+});
+
+// Handle ad close
+adCloseBtn().addEventListener('click', ()=> { 
+  adModal().style.display = 'none';
+  if (adWatchTimer) clearTimeout(adWatchTimer);
+});
 
 /* ========== Boot sequence ========== */
 document.addEventListener('DOMContentLoaded', async () => {
-  // Telegram WebApp
   try {
     tg = window.Telegram.WebApp;
     if (tg) tg.expand();
-  } catch(e){ /* ignore */ }
+  } catch(e){}
 
-  // show spinner
   firebaseLoading().style.display = 'flex';
 
-  // derive uid from Telegram if available
   try {
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id){
       uid = 'user_' + tg.initDataUnsafe.user.id;
@@ -625,31 +748,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     userData.userId = uid;
   }
 
-  // detect location (best-effort)
   await detectLocation();
 
-  // ক্রিটিকাল: প্রথমে ইউজার ডেটা লোড করুন, তারপর UI রেন্ডার করুন
   try {
     await loadUserFromServer();
     await loadSettings();
     await loadWithdrawalRequests();
     
-    // UI রেন্ডার
     renderUI();
     
-    // hide loading spinner
     firebaseLoading().style.display = 'none';
     
-    // set date
     document.getElementById('current-date').textContent = new Date().toDateString();
     
-    // hook buttons
     watchAdBtn().addEventListener('click', onAdEarn);
     toggleWithdrawBtn().addEventListener('click', ()=> {
       withdrawFormEl().style.display = (withdrawFormEl().style.display === 'none' || withdrawFormEl().style.display === '') ? 'block' : 'none';
     });
 
-    // amounts grid click
     document.querySelectorAll('.amount-btn').forEach(b => {
       b.addEventListener('click', (ev)=>{
         document.querySelectorAll('.amount-btn').forEach(x=>x.classList.remove('selected'));
@@ -658,10 +774,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     });
 
-    // Withdraw submit
     submitWithdrawBtn().addEventListener('click', submitWithdrawRequest);
 
-    // periodic UI updates (reset time)
     setInterval(updateResetTimeUI, 60*1000);
     
   } catch (error) {
