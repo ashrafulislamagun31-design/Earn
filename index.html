@@ -24,6 +24,8 @@
       --accent: #6a11cb;
       --success: #28a745;
       --danger: #dc3545;
+      --warning: #ffc107;
+      --info: #17a2b8;
     }
     *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Segoe UI,Roboto,Arial;}
     body{background:var(--primary-gradient);min-height:100vh;padding:20px;color:var(--text-dark);display:flex;justify-content:center;}
@@ -34,19 +36,24 @@
     .balance-amount{font-size:34px;color:var(--accent);font-weight:800;}
     .content{padding:18px;}
     .section{background:var(--card-bg);padding:18px;border-radius:12px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:700;}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:700;transition:all 0.3s ease;}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}
     .btn-primary{background:linear-gradient(90deg,#6a11cb,#2575fc);color:#fff;}
     .btn-secondary{background:#fff;border:1px solid #e6e6e6;color:#333;}
+    .btn-success{background:linear-gradient(90deg,#28a745,#20c997);color:#fff;}
+    .btn-warning{background:linear-gradient(90deg,#ffc107,#fd7e14);color:#fff;}
     .task-info{display:flex;justify-content:space-between;margin-top:10px;color:#666;font-size:13px;flex-wrap:wrap;}
     .task-info > div {margin-right:10px;}
     .task-progress{height:8px;background:#eee;border-radius:6px;margin-top:10px;overflow:hidden;}
     .task-bar{height:100%;background:linear-gradient(90deg,#6a11cb,#2575fc);width:0%}
     .withdrawal-form{margin-top:12px}
     .method-cards{display:flex;gap:8px;flex-wrap:wrap}
-    .method-card{padding:10px;border-radius:10px;border:1px solid #e9e9e9;min-width:90px;text-align:center;cursor:pointer;background:#fff}
+    .method-card{padding:10px;border-radius:10px;border:1px solid #e9e9e9;min-width:90px;text-align:center;cursor:pointer;background:#fff;transition:all 0.2s ease;}
+    .method-card:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.1);}
     .method-card.selected{border-color:var(--accent);background:rgba(106,17,203,0.06)}
     .amount-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-    .amount-btn{padding:10px;border-radius:8px;border:1px solid #eee;background:#fff;cursor:pointer;font-weight:700}
+    .amount-btn{padding:10px;border-radius:8px;border:1px solid #eee;background:#fff;cursor:pointer;font-weight:700;transition:all 0.2s ease;}
+    .amount-btn:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(0,0,0,0.1);}
     .amount-btn.selected{border-color:var(--accent);background:rgba(106,17,203,0.06)}
     .input{width:100%;padding:12px;border-radius:10px;border:1px solid #e9e9e9;margin-top:8px}
     .history-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:#fff;margin-bottom:8px;border:1px solid #f3f3f3}
@@ -59,6 +66,23 @@
     .ad-modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:3500}
     .ad-box{background:#fff;padding:20px;border-radius:12px;width:92%;max-width:360px;text-align:center}
     .small{font-size:13px;color:#666}
+    
+    /* New styles for community and referral sections */
+    .community-section {display:flex;flex-direction:column;gap:12px;margin-top:12px;}
+    .community-btn {width:100%;justify-content:center;text-align:center;}
+    .referral-section {margin-top:16px;}
+    .referral-code {background:#f8f9fa;padding:14px;border-radius:10px;margin-top:10px;text-align:center;border:1px dashed #ddd;}
+    .referral-code-text {font-size:18px;font-weight:800;letter-spacing:1px;color:var(--accent);margin:8px 0;}
+    .referral-stats {display:flex;justify-content:space-around;margin-top:14px;text-align:center;}
+    .stat-box {flex:1;padding:10px;}
+    .stat-value {font-size:20px;font-weight:800;color:var(--accent);}
+    .stat-label {font-size:12px;color:#666;}
+    .referral-instructions {margin-top:14px;padding:12px;background:#f0f8ff;border-radius:8px;border-left:4px solid var(--accent);}
+    .referral-instructions ol {padding-left:20px;margin-top:8px;}
+    .referral-instructions li {margin-bottom:6px;}
+    
+    /* Animation for spin */
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
@@ -93,6 +117,49 @@
           <div id="resetTime" class="small">Resets in 24h</div>
         </div>
         <div class="task-progress" aria-hidden="true"><div id="taskBar" class="task-bar"></div></div>
+      </div>
+
+      <!-- New Community Section -->
+      <div class="section">
+        <h3>Join Our Community</h3>
+        <div class="community-section">
+          <button id="joinChannelBtn" class="btn btn-success community-btn">📢 Join Our Channel</button>
+          <button id="joinGroupBtn" class="btn btn-warning community-btn">💬 Join Support Group</button>
+        </div>
+      </div>
+
+      <!-- New Referral Section -->
+      <div class="section">
+        <h3>Refer & Earn</h3>
+        <div class="referral-section">
+          <div class="small">Invite friends and earn ৳1 for each successful referral!</div>
+          
+          <div class="referral-code">
+            <div class="small">Your Referral Code:</div>
+            <div class="referral-code-text" id="referralCode">LOADING...</div>
+            <button id="copyRefCode" class="btn btn-primary" style="margin-top:8px">📋 Copy Code</button>
+          </div>
+          
+          <div class="referral-stats">
+            <div class="stat-box">
+              <div class="stat-value" id="refCount">0</div>
+              <div class="stat-label">Referrals</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value">৳<span id="refEarnings">0</span></div>
+              <div class="stat-label">Earned</div>
+            </div>
+          </div>
+          
+          <div class="referral-instructions">
+            <div class="small" style="font-weight:700">How to refer:</div>
+            <ol class="small">
+              <li>Share your referral code with friends</li>
+              <li>Ask them to use your code during registration</li>
+              <li>Earn ৳1 when they complete their first ad watch</li>
+            </ol>
+          </div>
+        </div>
       </div>
 
       <div class="section">
@@ -184,7 +251,11 @@ let userData = {
   todayAdClicks: 0, 
   lastAdReset: new Date().toDateString(),
   totalEarned: 0,
-  totalWithdrawn: 0
+  totalWithdrawn: 0,
+  referralCode: '',
+  referredBy: '',
+  referrals: [],
+  referralEarnings: 0
 };
 let withdrawalMethods = [];
 let allRequests = [];
@@ -215,6 +286,14 @@ const adModal = () => document.getElementById('adModal');
 const adStatus = () => document.getElementById('adStatus');
 const adDoneBtn = () => document.getElementById('adDoneBtn');
 
+// New DOM refs for community and referral
+const joinChannelBtn = () => document.getElementById('joinChannelBtn');
+const joinGroupBtn = () => document.getElementById('joinGroupBtn');
+const referralCodeEl = () => document.getElementById('referralCode');
+const copyRefCodeBtn = () => document.getElementById('copyRefCode');
+const refCountEl = () => document.getElementById('refCount');
+const refEarningsEl = () => document.getElementById('refEarnings');
+
 /* ========== Utility functions ========== */
 function formatDateField(d){
   if(!d) return '';
@@ -243,6 +322,16 @@ function simulateAdClick() {
     const clicked = Math.random() < 0.7;
     setTimeout(() => resolve(clicked), 1000);
   });
+}
+
+// Generate referral code
+function generateReferralCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
 /* ========== Daily Reset Logic ========== */
@@ -295,6 +384,12 @@ async function loadUserFromServer(){
       userData.registrationDate = data.registrationDate || new Date().toISOString();
       userData.userId = data.userId || uid;
       
+      // Referral data
+      userData.referralCode = data.referralCode || generateReferralCode();
+      userData.referredBy = data.referredBy || '';
+      userData.referrals = data.referrals || [];
+      userData.referralEarnings = parseFloat(data.referralEarnings || 0);
+      
       // ডেইলি কাউন্ট লোড করুন কিন্তু রিসেট চেক করুন
       userData.todayAdCount = parseInt(data.todayAdCount || 0);
       userData.todayAdClicks = parseInt(data.todayAdClicks || 0);
@@ -318,7 +413,11 @@ async function loadUserFromServer(){
         todayAdClicks: 0,
         lastAdReset: today,
         registrationDate: new Date().toISOString(),
-        userId: uid
+        userId: uid,
+        referralCode: generateReferralCode(),
+        referredBy: '',
+        referrals: [],
+        referralEarnings: 0
       };
       await db.collection('users').doc(uid).set(userData);
       console.log('New user created');
@@ -332,10 +431,28 @@ async function loadUserFromServer(){
 
 async function loadWithdrawalRequests(){
   try {
-    const snap = await db.collection('withdrawalRequests').orderBy('date','desc').get();
-    allRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await db.collection('withdrawalRequests')
+      .where('userId', '==', uid)
+      .orderBy('date', 'desc')
+      .get();
+    
+    allRequests = snap.docs.map(d => ({ 
+      id: d.id, 
+      ...d.data(),
+      date: d.data().date || new Date().toISOString()
+    }));
   } catch(e){
     console.error('loadWithdrawalRequests error', e);
+    // Fallback: try without ordering
+    try {
+      const snap = await db.collection('withdrawalRequests')
+        .where('userId', '==', uid)
+        .get();
+      allRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(err) {
+      console.error('Fallback load error:', err);
+      allRequests = [];
+    }
   }
 }
 
@@ -398,6 +515,7 @@ function renderUI(){
   updateResetTimeUI();
   renderMethods();
   renderHistory();
+  renderReferralUI();
 }
 
 function renderMethods(){
@@ -471,6 +589,50 @@ function renderHistory(){
   });
 }
 
+function renderReferralUI() {
+  referralCodeEl().textContent = userData.referralCode || 'N/A';
+  refCountEl().textContent = userData.referrals ? userData.referrals.length : 0;
+  refEarningsEl().textContent = userData.referralEarnings ? userData.referralEarnings.toFixed(2) : '0.00';
+}
+
+/* ========== Community and Referral Functions ========== */
+function openCommunityChannel() {
+  window.open('https://t.me/easyearn1211', '_blank');
+}
+
+function openSupportGroup() {
+  window.open('https://t.me/+kx6C43GeG4ljY2Jl', '_blank');
+}
+
+function copyReferralCode() {
+  const code = userData.referralCode;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(() => {
+      showNotification('Referral code copied to clipboard!');
+    }).catch(err => {
+      fallbackCopyText(code);
+    });
+  } else {
+    fallbackCopyText(code);
+  }
+}
+
+function fallbackCopyText(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showNotification('Referral code copied to clipboard!');
+  } catch (err) {
+    console.error('Fallback: Unable to copy', err);
+    showNotification('Failed to copy code. Please copy manually.', false);
+  }
+  document.body.removeChild(textArea);
+}
+
 /* ========== Withdraw flow ========== */
 async function submitWithdrawRequest(){
   const selected = document.querySelector('.method-card.selected');
@@ -478,68 +640,104 @@ async function submitWithdrawRequest(){
   const method = selected.dataset.method;
   const number = accountNumberInput().value.trim();
   let amount = parseFloat(withdrawAmountInput().value);
-  if (!number || isNaN(amount)) return showNotification('Fill all fields', false);
+  
+  // Validation improvements
+  if (!number) return showNotification('Please enter account number', false);
+  if (number.length < 11) return showNotification('Please enter valid account number (11 digits)', false);
+  if (isNaN(amount) || amount <= 0) return showNotification('Please enter valid amount', false);
   if (amount < 20 || amount > 500) return showNotification('Amount must be between 20 and 500', false);
+  if (userData.balance < amount) return showNotification('Insufficient balance', false);
 
   const userRef = db.collection('users').doc(uid);
   const reqsRef = db.collection('withdrawalRequests');
 
   try {
+    // Show loading
+    submitWithdrawBtn().disabled = true;
+    submitWithdrawBtn().textContent = 'Submitting...';
+
+    // Use transaction for data consistency
     await db.runTransaction(async (tx) => {
       const userSnap = await tx.get(userRef);
       if (!userSnap.exists) throw new Error('User not found');
+      
       const serverUser = userSnap.data();
       const serverBalance = parseFloat(serverUser.balance || 0);
+      
       if (serverBalance < amount) throw new Error('INSUFFICIENT_BALANCE');
 
+      // Update user balance
       tx.update(userRef, {
         balance: serverBalance - amount,
         totalWithdrawn: parseFloat(serverUser.totalWithdrawn || 0) + amount,
         lastUpdate: new Date().toISOString()
       });
 
+      // Create withdrawal request
       const newReqRef = reqsRef.doc();
       tx.set(newReqRef, {
         userId: uid,
-        method,
-        number,
-        amount,
+        method: method,
+        number: number,
+        amount: amount,
         status: 'pending',
-        date: FieldValue.serverTimestamp(),
+        date: new Date().toISOString(), // Use client timestamp
         ip: userIP,
-        country: userCountry
+        country: userCountry,
+        userName: userData.name || 'Unknown',
+        userUsername: userData.username || 'Unknown'
       });
     });
 
+    // Update local data
     userData.balance = parseFloat(userData.balance || 0) - amount;
     userData.totalWithdrawn = parseFloat(userData.totalWithdrawn || 0) + amount;
     
+    // Add to activity log
     userData.activityLog = userData.activityLog || [];
     userData.activityLog.push({
       type: 'withdrawal',
       date: new Date().toISOString(),
-      amount,
-      method,
+      amount: amount,
+      method: method,
+      number: number,
+      status: 'pending',
       ip: userIP,
       country: userCountry
     });
 
+    // Reload and update UI
     await loadWithdrawalRequests();
     renderUI();
 
+    // Reset form
     document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
     document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
     accountNumberInput().value = '';
     withdrawAmountInput().value = '';
     withdrawFormEl().style.display = 'none';
 
-    showNotification('Withdrawal request submitted');
-    saveUserToServer().catch(()=>{});
+    showNotification('Withdrawal request submitted successfully!');
+    
+    // Save user data (without balance update as it's already done in transaction)
+    await saveUserToServer();
 
   } catch (err){
     console.error('Withdraw transaction error', err);
-    if (err && err.message === 'INSUFFICIENT_BALANCE') showNotification('Insufficient balance', false);
-    else showNotification('Could not submit withdrawal', false);
+    
+    if (err && err.message === 'INSUFFICIENT_BALANCE') {
+      showNotification('Insufficient balance', false);
+    } else if (err && err.message.includes('permission')) {
+      showNotification('Database permission error. Please contact support.', false);
+    } else if (err && err.message.includes('offline')) {
+      showNotification('Network error. Please check your connection.', false);
+    } else {
+      showNotification('Could not submit withdrawal. Please try again.', false);
+    }
+  } finally {
+    // Reset button state
+    submitWithdrawBtn().disabled = false;
+    submitWithdrawBtn().textContent = '✅ Submit Request';
   }
 }
 
@@ -653,6 +851,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     document.getElementById('current-date').textContent = new Date().toDateString();
     
+    // Event listeners
     watchAdBtn().addEventListener('click', onAdEarn);
     toggleWithdrawBtn().addEventListener('click', ()=> {
       withdrawFormEl().style.display = (withdrawFormEl().style.display === 'none' || withdrawFormEl().style.display === '') ? 'block' : 'none';
@@ -667,6 +866,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     submitWithdrawBtn().addEventListener('click', submitWithdrawRequest);
+    
+    // New event listeners for community and referral
+    joinChannelBtn().addEventListener('click', openCommunityChannel);
+    joinGroupBtn().addEventListener('click', openSupportGroup);
+    copyRefCodeBtn().addEventListener('click', copyReferralCode);
 
     setInterval(updateResetTimeUI, 60*1000);
     
@@ -676,9 +880,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     showNotification('Loading failed. Please refresh.', false);
   }
 });
-
-/* ========== small animations ========== */
-(function(){ const s = document.createElement('style'); s.innerHTML='@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}'; document.head.appendChild(s); })();
 </script>
 </body>
 </html>
