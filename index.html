@@ -8,6 +8,9 @@
   <!-- Telegram Web App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+  <!-- Ad script (optional) -->
+  <script src="https://adexora.com/cdn/ads.js?id=141" defer></script>
+
   <!-- Firebase (compat - works with older code patterns) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -56,9 +59,6 @@
     .ad-modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:3500}
     .ad-box{background:#fff;padding:20px;border-radius:12px;width:92%;max-width:360px;text-align:center}
     .small{font-size:13px;color:#666}
-    .ad-container{width:100%;height:250px;background:#f5f5f5;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:15px 0;overflow:hidden;}
-    .ad-placeholder{color:#666;font-size:16px;}
-    .ad-frame{width:100%;height:100%;border:none;}
   </style>
 </head>
 <body>
@@ -140,15 +140,11 @@
   <div class="ad-modal" id="adModal">
     <div class="ad-box">
       <h3>Advertisement</h3>
-      <div class="ad-container" id="adContainer">
-        <div class="ad-placeholder" id="adPlaceholder">Loading advertisement...</div>
-        <iframe id="adFrame" class="ad-frame" style="display:none"></iframe>
+      <div style="margin:16px 0">
+        <div style="width:48px;height:48px;border:4px solid #eee;border-top-color:#6a11cb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
       </div>
-      <div id="adStatus" class="small">Please watch the ad completely to earn reward</div>
-      <div style="margin-top:16px">
-        <button id="adCloseBtn" class="btn btn-secondary">Close</button>
-        <button id="adDoneBtn" class="btn btn-primary" style="display:none">I Watched Complete Ad</button>
-      </div>
+      <div id="adStatus" class="small">Playing ad...</div>
+      <div style="margin-top:16px"><button id="adDoneBtn" class="btn btn-primary" style="display:none">OK</button></div>
     </div>
   </div>
 
@@ -196,10 +192,6 @@ let perAdRate = 0.06;
 let dailyLimit = 10;
 let userIP = "Unknown";
 let userCountry = "Unknown";
-let adWatchStartTime = null;
-let adWatchTimer = null;
-let adCompleted = false;
-let adClicked = false;
 
 /* ========== DOM refs ========== */
 const balanceEl = () => document.getElementById('balance');
@@ -222,10 +214,6 @@ const firebaseLoading = () => document.getElementById('firebaseLoading');
 const adModal = () => document.getElementById('adModal');
 const adStatus = () => document.getElementById('adStatus');
 const adDoneBtn = () => document.getElementById('adDoneBtn');
-const adCloseBtn = () => document.getElementById('adCloseBtn');
-const adContainer = () => document.getElementById('adContainer');
-const adPlaceholder = () => document.getElementById('adPlaceholder');
-const adFrame = () => document.getElementById('adFrame');
 
 /* ========== Utility functions ========== */
 function formatDateField(d){
@@ -249,114 +237,13 @@ function updateResetTimeUI(){
   resetTimeEl().textContent = `Resets in ${hrs}h ${mins}m`;
 }
 
-/* ========== Simple Ad System (Adexora Alternative) ========== */
-function loadAd() {
-  return new Promise((resolve, reject) => {
-    try {
-      // Clear previous ad
-      adFrame().style.display = 'none';
-      adPlaceholder().style.display = 'block';
-      adPlaceholder().textContent = 'Loading advertisement...';
-      
-      // Simulate ad loading delay
-      setTimeout(() => {
-        // Use a simple iframe with a mock ad or redirect to Adexora
-        const adUrls = [
-          'https://ads.example.com/ad1', // Replace with actual ad URLs
-          'https://ads.example.com/ad2',
-          'https://google.com', // Fallback
-          'https://youtube.com'
-        ];
-        
-        const randomAd = adUrls[Math.floor(Math.random() * adUrls.length)];
-        
-        adFrame().src = randomAd;
-        adFrame().style.display = 'block';
-        adPlaceholder().style.display = 'none';
-        
-        adStatus().textContent = 'Ad loaded. Please watch for 15 seconds...';
-        adWatchStartTime = Date.now();
-        startAdTimer();
-        
-        // Track ad view
-        userData.activityLog.push({
-          type: 'ad_view', 
-          date: new Date().toISOString(), 
-          adNetwork: 'Internal',
-          ip: userIP, 
-          country: userCountry 
-        });
-        
-        resolve();
-      }, 2000);
-      
-    } catch (error) {
-      reject(error);
-    }
+// Ad click simulation
+function simulateAdClick() {
+  return new Promise((resolve) => {
+    const clicked = Math.random() < 0.7;
+    setTimeout(() => resolve(clicked), 1000);
   });
 }
-
-function startAdTimer() {
-  let seconds = 0;
-  adWatchTimer = setInterval(() => {
-    seconds++;
-    adStatus().textContent = `Watching ad... ${seconds}s/15s`;
-    
-    if (seconds >= 15) {
-      clearInterval(adWatchTimer);
-      adCompleted = true;
-      adStatus().textContent = 'Ad completed! Click "I Watched Complete Ad" to claim reward.';
-      adDoneBtn().style.display = 'inline-flex';
-    }
-  }, 1000);
-}
-
-// Track clicks on the ad frame
-adFrame().addEventListener('load', function() {
-  // Add click tracking to the iframe content
-  try {
-    adFrame().contentWindow.document.addEventListener('click', function() {
-      if (!adClicked) {
-        adClicked = true;
-        userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
-        userData.adClickHistory = userData.adClickHistory || [];
-        userData.adClickHistory.push({ 
-          date: new Date().toISOString(), 
-          adNetwork: 'Internal',
-          ip: userIP, 
-          country: userCountry 
-        });
-        
-        userData.activityLog.push({
-          type: 'ad_click', 
-          date: new Date().toISOString(), 
-          adNetwork: 'Internal',
-          ip: userIP, 
-          country: userCountry 
-        });
-        
-        showNotification('Ad clicked! +1 click counted');
-      }
-    });
-  } catch (e) {
-    // Cross-origin restriction, use alternative method
-    adFrame().contentWindow.addEventListener('click', function() {
-      if (!adClicked) {
-        adClicked = true;
-        userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
-        userData.adClickHistory = userData.adClickHistory || [];
-        userData.adClickHistory.push({ 
-          date: new Date().toISOString(), 
-          adNetwork: 'Internal',
-          ip: userIP, 
-          country: userCountry 
-        });
-        
-        showNotification('Ad clicked! +1 click counted');
-      }
-    });
-  }
-});
 
 /* ========== Daily Reset Logic ========== */
 function checkAndResetDailyCounts() {
@@ -364,10 +251,12 @@ function checkAndResetDailyCounts() {
   if (userData.lastAdReset !== today) {
     console.log('Resetting daily counts for new day');
     
+    // শুধু ডেইলি কাউন্ট রিসেট করুন, ব্যালেন্স নয়
     userData.lastAdReset = today;
     userData.todayAdCount = 0;
     userData.todayAdClicks = 0;
     
+    // সার্ভারে সেভ করুন
     saveUserToServer().catch(e => console.error('Reset save error:', e));
     return true;
   }
@@ -380,6 +269,9 @@ async function detectLocation(){
     const r = await fetch('https://api.ipify.org?format=json');
     const j = await r.json();
     userIP = j.ip || 'Unknown';
+    const r2 = await fetch(`https://ipapi.co/${userIP}/json/`);
+    const j2 = await r2.json();
+    userCountry = j2.country_code || 'Unknown';
   } catch(e){
     console.warn('Location detect failed', e);
     userIP = 'Unknown'; userCountry = 'Unknown';
@@ -393,6 +285,7 @@ async function loadUserFromServer(){
     if (doc.exists){
       const data = doc.data();
       
+      // ব্যালেন্স এবং পার্মানেন্ট ডেটা লোড করুন
       userData.balance = parseFloat(data.balance || 0);
       userData.totalEarned = parseFloat(data.totalEarned || 0);
       userData.totalWithdrawn = parseFloat(data.totalWithdrawn || 0);
@@ -402,14 +295,17 @@ async function loadUserFromServer(){
       userData.registrationDate = data.registrationDate || new Date().toISOString();
       userData.userId = data.userId || uid;
       
+      // ডেইলি কাউন্ট লোড করুন কিন্তু রিসেট চেক করুন
       userData.todayAdCount = parseInt(data.todayAdCount || 0);
       userData.todayAdClicks = parseInt(data.todayAdClicks || 0);
       userData.lastAdReset = data.lastAdReset || new Date().toDateString();
       
+      // ডেইলি রিসেট চেক করুন
       checkAndResetDailyCounts();
       
       console.log('User data loaded - Balance:', userData.balance, 'Today Count:', userData.todayAdCount);
     } else {
+      // নতুন ইউজার তৈরি করুন
       const today = new Date().toDateString();
       userData = {
         balance: 0,
@@ -486,6 +382,7 @@ async function saveUserToServer(){
 
 /* ========== UI render functions ========== */
 function renderUI(){
+  // ডেইলি রিসেট চেক করুন
   checkAndResetDailyCounts();
   
   const balance = parseFloat(userData.balance || 0);
@@ -648,6 +545,7 @@ async function submitWithdrawRequest(){
 
 /* ========== Watch ad flow ========== */
 async function onAdEarn(){
+  // প্রথমে ডেইলি রিসেট চেক করুন
   checkAndResetDailyCounts();
   
   const currentBalance = parseFloat(userData.balance || 0);
@@ -656,80 +554,66 @@ async function onAdEarn(){
     return showNotification('You reached daily ad limit', false);
   }
 
-  // Reset ad state
-  adCompleted = false;
-  adClicked = false;
-  adWatchStartTime = null;
-  if (adWatchTimer) clearTimeout(adWatchTimer);
-
   adModal().style.display = 'flex';
-  adStatus().textContent = 'Loading advertisement...';
+  adStatus().textContent = 'Playing ad...';
   adDoneBtn().style.display = 'none';
 
+  const playAd = () => new Promise((resolve, reject) => {
+    if (typeof window.showAdexora === 'function'){
+      window.showAdexora().then(resolve).catch(reject);
+    } else {
+      setTimeout(resolve, 1800);
+    }
+  });
+
   try {
-    await loadAd();
-  } catch (error) {
-    console.error('Ad load error:', error);
-    adStatus().textContent = 'Ad failed to load. Please try again.';
-    showNotification('Ad loading error', false);
+    await playAd();
+    const adClicked = await simulateAdClick();
+    
+    adStatus().textContent = adClicked ? 'Ad clicked! +1 click' : 'Ad finished';
+    adDoneBtn().style.display = 'inline-flex';
+
+    userData.todayAdCount = (userData.todayAdCount || 0) + 1;
+    userData.balance = currentBalance + parseFloat(perAdRate);
+    userData.totalEarned = parseFloat(userData.totalEarned || 0) + parseFloat(perAdRate);
+
+    userData.adHistory = userData.adHistory || [];
+    userData.activityLog = userData.activityLog || [];
+    
+    const rec = { date: new Date().toISOString(), amount: perAdRate };
+    userData.adHistory.push(rec);
+    userData.activityLog.push({
+      type: 'ad', 
+      date: new Date().toISOString(), 
+      amount: perAdRate, 
+      ip: userIP, 
+      country: userCountry 
+    });
+
+    if (adClicked) {
+      userData.todayAdClicks = (userData.todayAdClicks || 0) + 1;
+      userData.adClickHistory = userData.adClickHistory || [];
+      userData.adClickHistory.push({ date: new Date().toISOString() });
+      userData.activityLog.push({
+        type: 'ad_click', 
+        date: new Date().toISOString(), 
+        ip: userIP, 
+        country: userCountry 
+      });
+    }
+
+    await saveUserToServer();
+    await loadWithdrawalRequests();
+    renderUI();
+    showNotification('You earned ৳' + parseFloat(perAdRate).toFixed(2) + (adClicked ? ' +1 click' : ''));
+  } catch (e){
+    console.error('Ad play error', e);
+    showNotification('Ad failed to play', false);
+    adModal().style.display = 'none';
   }
 }
 
-// Handle ad completion
-adDoneBtn().addEventListener('click', async ()=> { 
-  if (!adCompleted) {
-    showNotification('Please watch the ad completely', false);
-    return;
-  }
-
-  const currentBalance = parseFloat(userData.balance || 0);
-  
-  // Reward user for completed ad
-  userData.todayAdCount = (userData.todayAdCount || 0) + 1;
-  userData.balance = currentBalance + parseFloat(perAdRate);
-  userData.totalEarned = parseFloat(userData.totalEarned || 0) + parseFloat(perAdRate);
-
-  // Add ad history
-  userData.adHistory = userData.adHistory || [];
-  userData.activityLog = userData.activityLog || [];
-  
-  const rec = { 
-    date: new Date().toISOString(), 
-    amount: perAdRate,
-    adNetwork: 'Internal',
-    watchTime: Date.now() - adWatchStartTime,
-    clicked: adClicked
-  };
-  userData.adHistory.push(rec);
-  userData.activityLog.push({
-    type: 'ad', 
-    date: new Date().toISOString(), 
-    amount: perAdRate, 
-    adNetwork: 'Internal',
-    ip: userIP, 
-    country: userCountry 
-  });
-
-  // Save and update UI
-  await saveUserToServer();
-  await loadWithdrawalRequests();
-  renderUI();
-  
-  adModal().style.display = 'none';
-  
-  let message = 'You earned ৳' + parseFloat(perAdRate).toFixed(2);
-  if (adClicked) {
-    message += ' +1 click counted';
-  }
-  showNotification(message);
-});
-
-// Handle ad close
-adCloseBtn().addEventListener('click', ()=> { 
-  adModal().style.display = 'none';
-  if (adWatchTimer) clearTimeout(adWatchTimer);
-  adFrame().src = 'about:blank'; // Clear the iframe
-});
+adDoneBtn().addEventListener('click', ()=> { adModal().style.display = 'none'; });
 
 /* ========== Boot sequence ========== */
 document.addEventListener('DOMContentLoaded', async () => {
