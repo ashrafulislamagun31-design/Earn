@@ -11,10 +11,6 @@
   <!-- Ad scripts -->
   <script src="https://adexora.com/cdn/ads.js?id=141" defer></script>
   
-  <!-- Adextra Ad Script -->
-  <div id="02550eb738a9bc745b2d1ca9865a18866fad3996"></div>
-  <script async src="https://partner.adextra.io/jt/02550eb738a9bc745b2d1ca9865a18866fad3996.js"></script>
-
   <!-- Firebase (compat - works with older code patterns) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -96,6 +92,16 @@
       align-items: center;
       justify-content: center;
       margin: 16px 0;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    
+    /* Ad provider indicator */
+    .ad-provider {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
     }
   </style>
 </head>
@@ -221,13 +227,17 @@
   <div class="ad-modal" id="adModal">
     <div class="ad-box">
       <h3>Advertisement</h3>
-      <div id="adextra-ad-container" style="display:none">
-        <!-- Adextra ad will be loaded here -->
-      </div>
+      <div class="ad-provider" id="adProvider">Loading ad...</div>
+      
+      <!-- Adextra Ad Container -->
+      <div id="adextra-ad-container" style="display:none"></div>
+      
       <div id="adSpinner" style="margin:16px 0">
         <div style="width:48px;height:48px;border:4px solid #eee;border-top-color:#6a11cb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto"></div>
       </div>
-      <div id="adStatus" class="small">Loading ad...</div>
+      
+      <div id="adStatus" class="small">Please wait while we load the ad</div>
+      
       <div style="margin-top:16px">
         <button id="adDoneBtn" class="btn btn-primary" style="display:none">OK</button>
         <button id="adSkipBtn" class="btn btn-secondary" style="display:none">Skip Ad</button>
@@ -309,6 +319,7 @@ const adDoneBtn = () => document.getElementById('adDoneBtn');
 const adSkipBtn = () => document.getElementById('adSkipBtn');
 const adSpinner = () => document.getElementById('adSpinner');
 const adextraAdContainer = () => document.getElementById('adextra-ad-container');
+const adProviderEl = () => document.getElementById('adProvider');
 
 // New DOM refs for community and referral
 const joinChannelBtn = () => document.getElementById('joinChannelBtn');
@@ -671,45 +682,52 @@ function showAdexoraAd() {
   });
 }
 
+function loadAdextraAd() {
+  return new Promise((resolve, reject) => {
+    const container = adextraAdContainer();
+    container.innerHTML = ''; // clear previous
+    
+    const script = document.createElement('script');
+    script.src = "https://partner.adextra.io/jt/02550eb738a9bc745b2d1ca9865a18866fad3996.js";
+    script.async = true;
+    script.onload = () => {
+      console.log('Adextra script loaded');
+      // Wait a bit for the ad to render
+      setTimeout(() => {
+        resolve(true);
+      }, 1000);
+    };
+    script.onerror = () => {
+      console.error('Failed to load Adextra ad');
+      reject(false);
+    };
+    
+    container.appendChild(script);
+  });
+}
+
 function showAdextraAd() {
   return new Promise((resolve, reject) => {
     // Show Adextra container and hide spinner
     adextraAdContainer().style.display = 'block';
     adSpinner().style.display = 'none';
     
-    // Check if Adextra script is loaded
-    if (typeof window.Adextra !== 'undefined') {
-      // Adextra is loaded, show the ad
-      adStatus().textContent = 'Adextra ad loaded';
-      
-      // Set a timeout to simulate ad completion
+    adStatus().textContent = 'Adextra ad loaded, watch now';
+    
+    // Load the Adextra ad
+    loadAdextraAd().then(() => {
+      // Simulate 10 sec watch time
       setTimeout(() => {
         adextraAdContainer().style.display = 'none';
         adSpinner().style.display = 'block';
         resolve(true);
       }, 10000); // 10 seconds for ad
-    } else {
-      // Adextra not loaded, try to load it
-      const script = document.createElement('script');
-      script.src = 'https://partner.adextra.io/jt/02550eb738a9bc745b2d1ca9865a18866fad3996.js';
-      script.async = true;
-      script.onload = () => {
-        adStatus().textContent = 'Adextra ad loaded';
-        
-        // Set a timeout to simulate ad completion
-        setTimeout(() => {
-          adextraAdContainer().style.display = 'none';
-          adSpinner().style.display = 'block';
-          resolve(true);
-        }, 10000); // 10 seconds for ad
-      };
-      script.onerror = () => {
-        adextraAdContainer().style.display = 'none';
-        adSpinner().style.display = 'block';
-        reject(new Error('Failed to load Adextra ad'));
-      };
-      document.head.appendChild(script);
-    }
+    }).catch(e => {
+      adStatus().textContent = 'Failed to load Adextra ad';
+      adextraAdContainer().style.display = 'none';
+      adSpinner().style.display = 'block';
+      reject(e);
+    });
   });
 }
 
@@ -845,10 +863,10 @@ async function onAdEarn(){
   
   try {
     if (useAdextra) {
-      adStatus().textContent = 'Loading Adextra ad...';
+      adProviderEl().textContent = 'Adextra Ad';
       await showAdextraAd();
     } else {
-      adStatus().textContent = 'Loading Adexora ad...';
+      adProviderEl().textContent = 'Adexora Ad';
       await showAdexoraAd();
     }
     
